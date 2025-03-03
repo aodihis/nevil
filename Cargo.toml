@@ -1,0 +1,26 @@
+[package]
+name = "dbchat"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+egui = "0.31.0"
+eframe = "0.31.0"
+
+
+sqlx = { version = "0.8.3", features = ["runtime-tokio-native-tls", "mysql", "postgres"] }
+tokio = { version = "1", features = ["full"] }
+
+
+reqwest = { version = "0.12.12", features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+
+keyring = "3.6.2"
+aes-gcm = "0.10.1"
+
+
+toml = "0.8.20"
+dirs = "6.0.0"
