@@ -7,6 +7,7 @@ mod security;
 
 fn main() -> eframe::Result<()> {
     let native_options = eframe::NativeOptions {
+        renderer: eframe::Renderer::Wgpu,
         ..Default::default()
     };
 
