@@ -1,3 +1,5 @@
+use egui::{Vec2, ViewportBuilder};
+
 mod app;
 mod db;
 mod llm;
@@ -5,9 +7,12 @@ mod ui;
 mod config;
 mod security;
 
+
 fn main() -> eframe::Result<()> {
+
     let native_options = eframe::NativeOptions {
         renderer: eframe::Renderer::Wgpu,
+        viewport: ViewportBuilder::default().with_inner_size(Vec2::new(800.0, 600.0)),
         ..Default::default()
     };
 

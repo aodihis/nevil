@@ -2,7 +2,7 @@ use crate::config::{AppConfig, DbConnection};
 use crate::db::{DatabaseManager, QueryResult};
 use crate::llm::LLMClient;
 use crate::security::SecureStorage;
-use crate::ui;
+use crate::ui::ui::render_ui;
 use eframe::egui;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
@@ -248,7 +248,7 @@ impl AppState {
 impl eframe::App for DBQueryApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Render the UI
-        ui::render_ui(ctx, &mut self.state);
+        render_ui(ctx, &mut self.state);
 
         // Request a repaint for continuous UI updates
         ctx.request_repaint();

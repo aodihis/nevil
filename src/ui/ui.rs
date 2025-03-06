@@ -2,31 +2,34 @@ use egui::{Align, Context, Layout, RichText, ScrollArea, TextEdit};
 
 use crate::app::{AppMode, AppState, MessageSender};
 use crate::config::{DbConnection, DbType};
+use crate::ui::left_panel::left_panel;
 
 pub fn render_ui(ctx: &Context, app_state: &mut AppState) {
-    egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-        ui.horizontal(|ui| {
-            ui.heading("Database Query Assistant");
-            ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                if ui.button("Settings").clicked() {
-                    app_state.mode = AppMode::Settings;
-                }
-                if ui.button("Connections").clicked() {
-                    app_state.mode = AppMode::Connections;
-                }
-                if ui.button("Query").clicked() {
-                    app_state.mode = AppMode::Query;
-                }
-            });
-        });
-    });
+    left_panel(ctx,app_state);
 
-    match app_state.mode {
-        AppMode::Settings => render_settings(ctx, app_state),
-        AppMode::Connections => render_connections(ctx, app_state),
-        AppMode::Query => render_query(ctx, app_state),
-        AppMode::NewConnection => render_new_connection(ctx, app_state),
-    }
+    // egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
+    //     ui.horizontal(|ui| {
+    //         ui.heading("Database Query Assistant");
+    //         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+    //             if ui.button("Settings").clicked() {
+    //                 app_state.mode = AppMode::Settings;
+    //             }
+    //             if ui.button("Connections").clicked() {
+    //                 app_state.mode = AppMode::Connections;
+    //             }
+    //             if ui.button("Query").clicked() {
+    //                 app_state.mode = AppMode::Query;
+    //             }
+    //         });
+    //     });
+    // });
+    //
+    // match app_state.mode {
+    //     AppMode::Settings => render_settings(ctx, app_state),
+    //     AppMode::Connections => render_connections(ctx, app_state),
+    //     AppMode::Query => render_query(ctx, app_state),
+    //     AppMode::NewConnection => render_new_connection(ctx, app_state),
+    // }
 }
 
 fn render_settings(ctx: &Context, app_state: &mut AppState) {
