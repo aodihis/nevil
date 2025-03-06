@@ -247,6 +247,12 @@ impl AppState {
 
 impl eframe::App for DBQueryApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+
+        let mut visuals = egui::Visuals::default();
+        visuals.panel_fill = egui::Color32::BLACK; // Black background
+        visuals.override_text_color = Some(egui::Color32::from_rgb(245, 245, 245)); // Global font color (yellow-orange)
+        ctx.set_visuals(visuals);
+
         // Render the UI
         render_ui(ctx, &mut self.state);
 
