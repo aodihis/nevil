@@ -1,5 +1,6 @@
 use egui::{Context, TextEdit};
 use crate::app::AppState;
+use crate::llm::llm::Provider;
 
 pub fn settings(ctx: &Context, app_state: &mut AppState){
     egui::CentralPanel::default().show(ctx, |ui| {
@@ -7,10 +8,16 @@ pub fn settings(ctx: &Context, app_state: &mut AppState){
         ui.add_space(10.0);
 
         let mut api_config = app_state.config.llm_api.clone();
-
+        let mut selected_provider = None;
         ui.horizontal(|ui| {
             ui.label("Provider:");
-            ui.text_edit_singleline(&mut api_config.provider);
+            egui::ComboBox::from_label("Select one!")
+                .selected_text(selected_provider.as_ref().map(|p: &Provider| p.name()).unwrap_or("Choose..."))
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(&mut selected_provider, Some(Provider::OpenAI), Provider::OpenAI.name());
+                    ui.selectable_value(&mut selected_provider, Some(Provider::Claude), Provider::Claude.name());
+            });
+
         });
 
         ui.horizontal(|ui| {
@@ -18,7 +25,7 @@ pub fn settings(ctx: &Context, app_state: &mut AppState){
             ui.text_edit_singleline(&mut api_config.model);
         });
 
-        let mut api_key = app_state.stored_api_key.clone().unwrap_or_else(|| "".to_string());
+        let mut api_key = app_state.config.llm_api.api_key.clone();
 
         ui.horizontal(|ui| {
             ui.label("API Key:");
@@ -27,12 +34,10 @@ pub fn settings(ctx: &Context, app_state: &mut AppState){
 
         if ui.button("Save API Settings").clicked() {
             app_state.config.llm_api = api_config;
-            app_state.stored_api_key = Some(api_key.clone());
 
             // Save API key securely
             if !api_key.is_empty() {
                 if let Err(err) = crate::security::SecureStorage::store_api_key(
-                    &app_state.config.llm_api.provider,
                     &api_key
                 ) {
                     app_state.error_message = Some(format!("Failed to store API key: {}", err));

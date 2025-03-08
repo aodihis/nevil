@@ -5,6 +5,21 @@ use serde_json::Value;
 use crate::config::LLMConfig;
 use crate::security::SecureStorage;
 
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
+pub enum Provider {
+    OpenAI,
+    Claude,
+}
+
+impl Provider {
+    pub fn name(&self) -> &'static str {
+        match self {
+            Provider::OpenAI => "OpenAI",
+            Provider::Claude => "Claude",
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct LLMClient {
     client: Client,
@@ -35,7 +50,7 @@ impl LLMClient {
 
     pub async fn generate_sql(&self, user_query: &str, schema_info: &str) -> Result<String, String> {
         // Retrieve the API key securely
-        let api_key = match SecureStorage::get_api_key(&self.config.provider) {
+        let api_key = match SecureStorage::get_api_key() {
             Ok(key) => key,
             Err(_) => return Err("API key not found".to_string()),
         };

@@ -1,3 +1,4 @@
+use crate::llm::llm::Provider;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
@@ -10,7 +11,7 @@ pub struct AppConfig {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct LLMConfig {
-    pub provider: String,
+    pub provider: Option<Provider>,
     pub api_key: String, // Store encrypted or as a placeholder
     pub model: String,
 }
@@ -60,9 +61,9 @@ impl Default for AppConfig {
     fn default() -> Self {
         Self {
             llm_api: LLMConfig {
-                provider: "Claude".to_string(),
+                provider: None,
                 api_key: "".to_string(),
-                model: "claude-3-7-sonnet-20250219".to_string(),
+                model: "".to_string(),
             },
             connections: Vec::new(),
         }

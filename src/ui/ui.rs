@@ -89,9 +89,6 @@ fn render_connections(ctx: &Context, app_state: &mut AppState) {
     });
 }
 
-fn render_new_connection(ctx: &Context, app_state: &mut AppState) {
-
-}
 
 fn render_query(ctx: &Context, app_state: &mut AppState) {
     egui::CentralPanel::default().show(ctx, |ui| {

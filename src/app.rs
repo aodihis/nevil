@@ -1,11 +1,11 @@
 use crate::config::{AppConfig, DbConnection};
 use crate::db::{DatabaseManager, QueryResult};
-use crate::llm::LLMClient;
 use crate::security::SecureStorage;
 use crate::ui::ui::render_ui;
 use eframe::egui;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
+use crate::llm::llm::LLMClient;
 
 pub enum AppMode {
     Query,
@@ -19,7 +19,6 @@ pub struct AppState {
     pub mode: AppMode,
     pub db_manager: Arc<DatabaseManager>,
     pub llm_client: Option<LLMClient>,
-    pub stored_api_key: Option<String>,
     pub active_connection: Option<String>,
     pub chat_messages: Vec<ChatMessage>,
     pub current_message: String,
@@ -64,21 +63,8 @@ impl DBQueryApp {
             .build()
             .expect("Failed to create Tokio runtime");
 
-        // Try to retrieve API key if configured
-        let stored_api_key = if !config.llm_api.provider.is_empty() {
-            runtime.block_on(async {
-                SecureStorage::get_api_key(&config.llm_api.provider).ok()
-            })
-        } else {
-            None
-        };
-
         // Create LLM client if API key is available
-        let llm_client = if stored_api_key.is_some() {
-            Some(LLMClient::new(config.llm_api.clone()))
-        } else {
-            None
-        };
+        let llm_client = Some(LLMClient::new(config.llm_api.clone()));
 
         // Create database manager
         let db_manager = Arc::new(DatabaseManager::new());
@@ -89,7 +75,6 @@ impl DBQueryApp {
                 mode: AppMode::Query,
                 db_manager,
                 llm_client,
-                stored_api_key,
                 active_connection: None,
                 chat_messages: Vec::new(),
                 current_message: String::new(),

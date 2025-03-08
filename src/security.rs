@@ -1,4 +1,3 @@
-use aes_gcm::aead::KeyInit;
 use keyring::Entry;
 use std::fmt;
 
@@ -20,15 +19,15 @@ impl SecureStorage {
     }
 
     // Store API key securely
-    pub fn store_api_key(provider: &str, api_key: &str) -> Result<(), SecurityError> {
-        let entry = Entry::new("db_query_assistant_api", provider)?;
+    pub fn store_api_key(api_key: &str) -> Result<(), SecurityError> {
+        let entry = Entry::new("db_query_assistant_api", "llm_api_key")?;
         entry.set_password(api_key)?;
         Ok(())
     }
 
     // Retrieve API key securely
-    pub fn get_api_key(provider: &str) -> Result<String, SecurityError> {
-        let entry = Entry::new("db_query_assistant_api", provider)?;
+    pub fn get_api_key() -> Result<String, SecurityError> {
+        let entry = Entry::new("db_query_assistant_api", "llm_api_key")?;
         let api_key = entry.get_password()?;
         Ok(api_key)
     }

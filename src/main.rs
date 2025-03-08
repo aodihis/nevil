@@ -7,7 +7,6 @@ mod ui;
 mod config;
 mod security;
 
-
 fn main() -> eframe::Result<()> {
 
     let native_options = eframe::NativeOptions {
