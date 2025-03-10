@@ -22,4 +22,21 @@ impl Model {
             Model::CodeDavinci002 => "code-davinci-002",
         }
     }
+
+    pub fn variants() -> Vec<Model> {
+        use Model::*;
+        vec![
+            Gpt4Turbo,
+            Gpt4,
+            Gpt35Turbo,
+            Gpt35Turbo16k,
+            TextDavinci003,
+            TextDavinci002,
+            CodeDavinci002,
+        ]
+    }
+
+    pub fn variants_name() -> Vec<&'static str> {
+        Self::variants().iter().map(|model| model.name()).collect()
+    }
 }

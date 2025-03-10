@@ -1,29 +1,64 @@
 use egui::{Context, TextEdit};
 use crate::app::AppState;
+use crate::config::LLMConfig;
+use crate::llm::claude::Model as ClaudeModel;
+use crate::llm::openai::Model as OpenAiModel;
 use crate::llm::llm::Provider;
 
+#[derive(Clone)]
+pub struct Settings {
+    pub provider: Option<Provider>,
+    pub model: String,
+}
 pub fn settings(ctx: &Context, app_state: &mut AppState){
     egui::CentralPanel::default().show(ctx, |ui| {
         ui.heading("LLM API Settings");
         ui.add_space(10.0);
 
-        let  api_config = &mut app_state.config.llm_api.clone();
-        let  selected_provider = &mut app_state.config.llm_api.provider;
+        let  selected_provider = &mut app_state.settings.provider;
+
+        let model_names = if let Some(provider) = selected_provider {
+            match provider {
+                Provider::OpenAI => OpenAiModel::variants_name(),
+                Provider::Claude => ClaudeModel::variants_name(),
+            }
+        } else {
+            vec![]
+        };
+
+        let provider = vec![Provider::Claude, Provider::OpenAI];
+
         ui.horizontal(|ui| {
             ui.label("Provider:");
             egui::ComboBox::new("provider", "")
                 .selected_text(selected_provider.as_ref().map(|p: &Provider| p.name()).unwrap_or("Choose..."))
                 .show_ui(ui, |ui| {
-                    ui.selectable_value(selected_provider, Some(Provider::OpenAI), Provider::OpenAI.name());
-                    ui.selectable_value(selected_provider, Some(Provider::Claude), Provider::Claude.name());
+                    for p in provider {
+                        if ui.selectable_value(selected_provider, Some(p.clone()), p.name()).clicked() {
+                            if *selected_provider == Some(p.clone()) {
+                                app_state.settings.model = "".to_owned();
+                            }
+                        }
+                    }
+
             });
 
         });
 
-        ui.horizontal(|ui| {
-            ui.label("Model:");
-            ui.text_edit_singleline(&mut api_config.model);
+        let model = &mut app_state.settings.model;
+        ui.add_enabled_ui(selected_provider.is_some(),|ui| {
+            ui.horizontal(|ui| {
+                ui.label("Model:");
+                egui::ComboBox::new("model", "")
+                    .selected_text(model.clone())
+                .show_ui(ui, |ui| {
+                    for item in model_names {
+                        ui.selectable_value(model, item.parse().unwrap(), item);
+                    }
+                })
+            });
         });
+
 
         let mut api_key = app_state.config.llm_api.api_key.clone();
 

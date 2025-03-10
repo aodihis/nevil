@@ -5,7 +5,8 @@ use crate::ui::ui::render_ui;
 use eframe::egui;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
-use crate::llm::llm::LLMClient;
+use crate::llm::llm::{LLMClient, Provider};
+use crate::ui::setting::Settings;
 
 pub enum AppMode {
     Query,
@@ -16,6 +17,7 @@ pub enum AppMode {
 
 pub struct AppState {
     pub config: AppConfig,
+    pub settings: Settings,
     pub mode: AppMode,
     pub db_manager: Arc<DatabaseManager>,
     pub llm_client: Option<LLMClient>,
@@ -69,9 +71,16 @@ impl DBQueryApp {
         // Create database manager
         let db_manager = Arc::new(DatabaseManager::new());
 
+        let provider = config.llm_api.provider.clone();
+        let model = config.llm_api.model.clone();
+
         Self {
             state: AppState {
                 config,
+                settings: Settings{
+                    provider,
+                    model,
+                },
                 mode: AppMode::Query,
                 db_manager,
                 llm_client,
