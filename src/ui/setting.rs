@@ -1,14 +1,14 @@
-use egui::{Context, TextEdit};
 use crate::app::AppState;
-use crate::config::LLMConfig;
 use crate::llm::claude::Model as ClaudeModel;
-use crate::llm::openai::Model as OpenAiModel;
 use crate::llm::llm::Provider;
+use crate::llm::openai::Model as OpenAiModel;
+use egui::{Context, TextEdit};
 
 #[derive(Clone)]
 pub struct Settings {
     pub provider: Option<Provider>,
     pub model: String,
+    pub api_key: String,
 }
 pub fn settings(ctx: &Context, app_state: &mut AppState){
     egui::CentralPanel::default().show(ctx, |ui| {
@@ -60,7 +60,7 @@ pub fn settings(ctx: &Context, app_state: &mut AppState){
         });
 
 
-        let mut api_key = app_state.config.llm_api.api_key.clone();
+        let mut api_key = app_state.settings.api_key.clone();
 
         ui.horizontal(|ui| {
             ui.label("API Key:");
@@ -68,7 +68,8 @@ pub fn settings(ctx: &Context, app_state: &mut AppState){
         });
 
         if ui.button("Save API Settings").clicked() {
-
+            app_state.config.llm_api.provider = app_state.settings.provider.clone();
+            app_state.config.llm_api.model = app_state.settings.model.clone();
             // Save API key securely
             if !api_key.is_empty() {
                 if let Err(err) = crate::security::SecureStorage::store_api_key(

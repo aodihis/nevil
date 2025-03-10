@@ -1,12 +1,12 @@
 use crate::config::{AppConfig, DbConnection};
 use crate::db::{DatabaseManager, QueryResult};
-use crate::security::SecureStorage;
+use crate::llm::llm::LLMClient;
+use crate::security::{SecureStorage, SecurityError};
+use crate::ui::setting::Settings;
 use crate::ui::ui::render_ui;
 use eframe::egui;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
-use crate::llm::llm::{LLMClient, Provider};
-use crate::ui::setting::Settings;
 
 pub enum AppMode {
     Query,
@@ -73,13 +73,17 @@ impl DBQueryApp {
 
         let provider = config.llm_api.provider.clone();
         let model = config.llm_api.model.clone();
-
+        let api_key = match SecureStorage::get_api_key() {
+            Ok(key) => {key}
+            Err(_) => {"".to_string()}
+        };
         Self {
             state: AppState {
                 config,
                 settings: Settings{
                     provider,
                     model,
+                    api_key,
                 },
                 mode: AppMode::Query,
                 db_manager,

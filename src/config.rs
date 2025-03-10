@@ -12,7 +12,6 @@ pub struct AppConfig {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct LLMConfig {
     pub provider: Option<Provider>,
-    pub api_key: String, // Store encrypted or as a placeholder
     pub model: String,
 }
 
@@ -62,7 +61,6 @@ impl Default for AppConfig {
         Self {
             llm_api: LLMConfig {
                 provider: None,
-                api_key: "".to_string(),
                 model: "".to_string(),
             },
             connections: Vec::new(),
