@@ -60,11 +60,11 @@ pub fn settings(ctx: &Context, app_state: &mut AppState){
         });
 
 
-        let mut api_key = app_state.settings.api_key.clone();
+        let mut api_key = &mut app_state.settings.api_key;
 
         ui.horizontal(|ui| {
             ui.label("API Key:");
-            ui.add(TextEdit::singleline(&mut api_key).password(true));
+            ui.add(TextEdit::singleline(api_key).password(true));
         });
 
         if ui.button("Save API Settings").clicked() {
