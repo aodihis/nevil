@@ -26,7 +26,7 @@ impl SecureStorage {
 
     // Retrieve DB password securely
     pub fn get_db_password(connection_name: &str) -> Result<String, SecurityError> {
-        let entry = Entry::new("db_query_assistant", connection_name)?;
+        let entry = Entry::new(Service::DbAssistant.as_str(), connection_name)?;
         let password = entry.get_password()?;
         Ok(password)
     }

@@ -48,6 +48,7 @@ impl AppConfig {
 
     pub fn save(&self) {
         let config_path = get_config_path();
+        println!("Saving config to: {}", config_path.display());
         if let Some(parent) = config_path.parent() {
             fs::create_dir_all(parent).ok();
         }
@@ -70,7 +71,7 @@ impl Default for AppConfig {
 
 fn get_config_path() -> PathBuf {
     let mut path = dirs::config_dir().unwrap_or_else(|| PathBuf::from("./"));
-    path.push("db_query_assistant");
+    path.push("neVil");
     path.push("config.toml");
     path
 }

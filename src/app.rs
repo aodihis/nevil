@@ -1,7 +1,7 @@
 use crate::config::{AppConfig, DbConnection};
 use crate::db::{DatabaseManager, QueryResult};
 use crate::llm::llm::LLMClient;
-use crate::security::{SecureStorage, SecurityError};
+use crate::security::SecureStorage;
 use crate::ui::setting::Settings;
 use crate::ui::ui::render_ui;
 use eframe::egui;
@@ -200,7 +200,7 @@ impl AppState {
         // Get schema info and generate SQL (asynchronously)
         let message_clone = message.clone();
 
-        // Use a oneshot channel to get the result back to the UI thread
+        // Use an oneshot channel to get the result back to the UI thread
         let (tx, _rx) = tokio::sync::oneshot::channel();
 
 
