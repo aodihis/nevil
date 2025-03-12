@@ -1,12 +1,25 @@
 use keyring::Entry;
 use std::fmt;
 
+enum Service {
+    DbAssistant,
+    LlmAPI
+}
+
+impl Service {
+    fn as_str(&self) -> &'static str {
+        match *self {
+            Service::DbAssistant => "nevil::db",
+            Service::LlmAPI => "nevil::llm_api",
+        }
+    }
+}
 pub struct SecureStorage;
 
 impl SecureStorage {
     // Store DB password securely
     pub fn store_db_password(connection_name: &str, password: &str) -> Result<(), SecurityError> {
-        let entry = Entry::new("db_query_assistant", connection_name)?;
+        let entry = Entry::new(Service::DbAssistant.as_str(), connection_name)?;
         entry.set_password(password)?;
         Ok(())
     }
@@ -20,14 +33,14 @@ impl SecureStorage {
 
     // Store API key securely
     pub fn store_api_key(api_key: &str) -> Result<(), SecurityError> {
-        let entry = Entry::new("db_query_assistant_api", "llm_api_key")?;
+        let entry = Entry::new(Service::LlmAPI.as_str(), "api_key")?;
         entry.set_password(api_key)?;
         Ok(())
     }
 
     // Retrieve API key securely
     pub fn get_api_key() -> Result<String, SecurityError> {
-        let entry = Entry::new("db_query_assistant_api", "llm_api_key")?;
+        let entry = Entry::new(Service::LlmAPI.as_str(), "api_key")?;
         let api_key = entry.get_password()?;
         Ok(api_key)
     }

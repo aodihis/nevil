@@ -7,7 +7,7 @@ edition = "2021"
 
 egui = "0.31.0"
 eframe = { version = "0.31.0", features = ["wgpu"] }
-keyring = "3.6.2"
+keyring = { version = "3.6.2", features = ["apple-native", "windows-native"] }
 
 sqlx = { version = "0.8.3", features = ["runtime-tokio-native-tls", "mysql", "postgres"] }
 tokio = { version = "1", features = ["full"] }
