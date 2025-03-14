@@ -1,7 +1,18 @@
 use egui::{Context, TextEdit, Window};
+use uuid::Uuid;
 use crate::app::{AppMode, AppState};
-use crate::config::DbType;
+use crate::config::{DbConnection, DbType};
 
+pub struct Connection {
+    pub name: String,
+    pub db_type: DbType,
+    pub host: String,
+    pub port: u16,
+    pub username: String,
+    pub database: String,
+    pub password: String,
+
+}
 pub fn new_connection(ctx: &Context, app_state: &mut AppState) {
     egui::CentralPanel::default().show(ctx, |ui| {
         ui.heading(if app_state.editing_connection { "Edit Connection" } else { "New Connection" });
