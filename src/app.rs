@@ -162,6 +162,22 @@ impl AppState {
 
     }
 
+    pub fn save_settings(&mut self) {
+        self.config.llm_api.provider = self.settings.provider.clone();
+        self.config.llm_api.model = self.settings.model.clone();
+        // Save API key securely
+        if !self.settings.api_key.is_empty() {
+            if let Err(err) = SecureStorage::store_api_key(
+                &self.settings.api_key
+            ) {
+                self.add_error_info(format!("Failed to store API key: {}", err));
+            } else {
+                self.config.save();
+                self.add_success_info("API settings saved successfully!".to_string());
+            }
+        }
+    }
+
     pub fn send_message(&mut self) {
         if self.current_message.trim().is_empty() {
             return;
@@ -251,12 +267,12 @@ impl AppState {
     }
 
     pub fn add_success_info(&mut self, message: String) {
-        self.clear_message();
+        self.clear_info();
         self.success_info = Some(message);
     }
 
-    pub fn error_success_info(&mut self, message: String) {
-        self.clear_message();
+    pub fn add_error_info(&mut self, message: String) {
+        self.clear_info();
         self.error_info = Some(message);
     }
 }

@@ -60,28 +60,15 @@ pub fn settings(ctx: &Context, app_state: &mut AppState){
         });
 
 
-        let api_key = &mut app_state.settings.api_key;
+
 
         ui.horizontal(|ui| {
             ui.label("API Key:");
-            ui.add(TextEdit::singleline(api_key).password(true));
+            ui.add(TextEdit::singleline(&mut app_state.settings.api_key).password(true));
         });
 
         if ui.button("Save API Settings").clicked() {
-            app_state.config.llm_api.provider = app_state.settings.provider.clone();
-            app_state.config.llm_api.model = app_state.settings.model.clone();
-            // Save API key securely
-            if !api_key.is_empty() {
-                if let Err(err) = crate::security::SecureStorage::store_api_key(
-                    &api_key
-                ) {
-                    app_state.error_info = Some(format!("Failed to store API key: {}", err));
-                } else {
-                    app_state.config.save();
-                    app_state.error_info = None;
-                    app_state.success_info = Some("API settings saved successfully!".to_string());
-                }
-            }
+            app_state.save_settings();
         }
 
         // Display error/success messages
