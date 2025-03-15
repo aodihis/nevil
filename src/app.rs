@@ -83,6 +83,8 @@ impl DBQueryApp {
                     provider,
                     model,
                     api_key,
+                    success_message: None,
+                    error_message: None,
                 },
                 mode: AppMode::Query,
                 db_manager,
@@ -131,7 +133,7 @@ impl AppState {
         let connection = self.connection.clone();
         let password = connection.password;
         if let Err(err) = SecureStorage::store_db_password(&connection.name, &password) {
-            self.error_info = Some(format!("Failed to store password: {}", err));
+            self.connection.error_message = Some(format!("Failed to store password: {}", err));
             return;
         }
 
@@ -157,7 +159,7 @@ impl AppState {
 
         // Save the config
         self.config.save();
-        self.add_success_info("Connection saved successfully!".to_string());
+        self.connection.success_message = Some("Connection saved successfully!".to_string());
         self.mode = AppMode::Connections;
     }
 
@@ -169,10 +171,12 @@ impl AppState {
             if let Err(err) = SecureStorage::store_api_key(
                 &self.settings.api_key
             ) {
-                self.add_error_info(format!("Failed to store API key: {}", err));
+                self.settings.success_message = None;
+                self.settings.error_message = Some(format!("Failed to store API key: {}", err));
             } else {
                 self.config.save();
-                self.add_success_info("API settings saved successfully!".to_string());
+                self.settings.error_message = None;
+                self.settings.success_message = Some("API settings saved successfully!".to_string());
             }
         }
     }
@@ -258,21 +262,6 @@ impl AppState {
         // For simplicity, we'll assume the UI will check for the result on the next frame
         // This is a placeholder and not fully implemented
         // self.pending_query = Some(rx);
-    }
-
-    pub fn clear_info(&mut self) {
-        self.error_info = None;
-        self.success_info = None;
-    }
-
-    pub fn add_success_info(&mut self, message: String) {
-        self.clear_info();
-        self.success_info = Some(message);
-    }
-
-    pub fn add_error_info(&mut self, message: String) {
-        self.clear_info();
-        self.error_info = Some(message);
     }
 }
 

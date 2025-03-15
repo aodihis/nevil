@@ -3,13 +3,13 @@ use egui::{Align, Context, Layout, RichText, ScrollArea, TextEdit};
 use crate::app::{AppMode, AppState, MessageSender};
 use crate::ui::connection::connection_ui;
 use crate::ui::left_panel::left_panel_ui;
-use crate::ui::setting::settings;
+use crate::ui::setting::{render_settings};
 
 pub fn render_ui(ctx: &Context, app_state: &mut AppState) {
     left_panel_ui(ctx, app_state);
 
     match app_state.mode {
-        AppMode::Settings => settings(ctx, app_state),
+        AppMode::Settings => render_settings(ctx, app_state),
         AppMode::Connections => connection_ui(ctx, app_state),
         AppMode::Query => render_query(ctx, app_state),
         AppMode::NewConnection => connection_ui(ctx, app_state)

@@ -14,6 +14,8 @@ pub struct Connection {
     pub username: String,
     pub database: String,
     pub password: String,
+    pub success_message: Option<String>,
+    pub error_message: Option<String>,
 
 }
 
@@ -29,6 +31,8 @@ impl Connection {
             username: "root".to_string(),
             database: "".to_string(),
             password: "".to_string(),
+            success_message: None,
+            error_message: None,
         }
     }
 }
@@ -96,8 +100,8 @@ pub fn connection_ui(ctx: &Context, app_state: &mut AppState) {
                 let db_manager = app_state.db_manager.clone();
 
                 // Test connection asynchronously
-                app_state.error_info = None;
-                app_state.success_info = Some("Testing connection...".to_string());
+                app_state.connection.error_message = None;
+                app_state.connection.success_message = Some("Testing connection...".to_string());
 
                 let ctx = ctx.clone();
                 let password = app_state.connection.password.clone();
@@ -123,10 +127,12 @@ pub fn connection_ui(ctx: &Context, app_state: &mut AppState) {
             }
 
             if ui.button("Save Connection").clicked() {
+                app_state.connection.error_message = None;
+                app_state.connection.success_message = None;
                 if app_state.connection.name.trim().is_empty() {
-                    app_state.error_info = Some("Connection name cannot be empty".to_string());
+                    app_state.connection.error_message = Some("Connection name cannot be empty".to_string());
                 } else if app_state.connection.database.trim().is_empty() {
-                    app_state.error_info = Some("Database name cannot be empty".to_string());
+                    app_state.connection.error_message = Some("Database name cannot be empty".to_string());
                 } else {
                     app_state.save_connection();
                 }
@@ -135,11 +141,11 @@ pub fn connection_ui(ctx: &Context, app_state: &mut AppState) {
 
         // Display error/success messages
         ui.add_space(10.0);
-        if let Some(ref err) = app_state.error_info {
+        if let Some(ref err) = app_state.connection.error_message {
             ui.colored_label(egui::Color32::RED, err);
         }
 
-        if let Some(ref success) = app_state.success_info {
+        if let Some(ref success) = app_state.connection.success_message {
             ui.colored_label(egui::Color32::GREEN, success);
         }
 
