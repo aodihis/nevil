@@ -132,7 +132,7 @@ impl AppState {
     pub fn save_connection(&mut self) {
         let connection = self.connection.clone();
         let password = connection.password;
-        if let Err(err) = SecureStorage::store_db_password(&connection.name, &password) {
+        if let Err(err) = SecureStorage::store_db_password(&connection.uuid.to_string(), &password) {
             self.connection.error_message = Some(format!("Failed to store password: {}", err));
             return;
         }

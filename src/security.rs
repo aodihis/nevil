@@ -18,15 +18,15 @@ pub struct SecureStorage;
 
 impl SecureStorage {
     // Store DB password securely
-    pub fn store_db_password(connection_name: &str, password: &str) -> Result<(), SecurityError> {
-        let entry = Entry::new(Service::DbAssistant.as_str(), connection_name)?;
+    pub fn store_db_password(uuid: &str, password: &str) -> Result<(), SecurityError> {
+        let entry = Entry::new(Service::DbAssistant.as_str(), uuid)?;
         entry.set_password(password)?;
         Ok(())
     }
 
     // Retrieve DB password securely
-    pub fn get_db_password(connection_name: &str) -> Result<String, SecurityError> {
-        let entry = Entry::new(Service::DbAssistant.as_str(), connection_name)?;
+    pub fn get_db_password(uuid: &str) -> Result<String, SecurityError> {
+        let entry = Entry::new(Service::DbAssistant.as_str(), uuid)?;
         let password = entry.get_password()?;
         Ok(password)
     }
