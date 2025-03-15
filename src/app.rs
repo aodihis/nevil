@@ -2,6 +2,7 @@ use crate::config::{AppConfig, DbConnection};
 use crate::db::{DatabaseManager, QueryResult};
 use crate::llm::llm::LLMClient;
 use crate::security::SecureStorage;
+use crate::ui::connection::Connection;
 use crate::ui::setting::Settings;
 use crate::ui::ui::render_ui;
 use eframe::egui;
@@ -25,9 +26,7 @@ pub struct AppState {
     pub chat_messages: Vec<ChatMessage>,
     pub current_message: String,
     pub query_result: Option<QueryResult>,
-    pub new_connection: Option<DbConnection>,
-    pub new_connection_password: Option<String>,
-    pub editing_connection: bool,
+    pub connection: Connection,
     pub error_message: Option<String>,
     pub success_message: Option<String>,
     pub runtime: Runtime,
@@ -92,9 +91,7 @@ impl DBQueryApp {
                 chat_messages: Vec::new(),
                 current_message: String::new(),
                 query_result: None,
-                new_connection: None,
-                new_connection_password: None,
-                editing_connection: false,
+                connection: Connection::new(),
                 error_message: None,
                 success_message: None,
                 runtime,
@@ -119,7 +116,7 @@ impl AppState {
 
         // Test the connection asynchronously
         self.runtime.spawn(async move {
-            if let Err(err) = db_manager_clone.connect(&connection).await {
+            if let Err(err) = db_manager_clone.connect(&connection, None).await {
                 // Handle error in UI thread
                 // This would require a channel or another mechanism to communicate back to the UI thread
                 // For simplicity, we'll just print the error
@@ -131,32 +128,38 @@ impl AppState {
     }
 
     pub fn save_connection(&mut self) {
-        if let Some(connection) = self.new_connection.take() {
-            if let Some(password) = self.new_connection_password.take() {
-                // Store password securely
-                if let Err(err) = SecureStorage::store_db_password(&connection.name, &password) {
-                    self.error_message = Some(format!("Failed to store password: {}", err));
-                    return;
-                }
-
-                // Update or add the connection
-                if self.editing_connection {
-                    if let Some(idx) = self.config.connections.iter().position(|c| c.name == connection.name) {
-                        self.config.connections[idx] = connection;
-                    } else {
-                        self.config.connections.push(connection);
-                    }
-                } else {
-                    self.config.connections.push(connection);
-                }
-
-                // Save the config
-                self.config.save();
-                self.success_message = Some("Connection saved successfully!".to_string());
-                self.mode = AppMode::Connections;
-                self.editing_connection = false;
+            let connection = self.connection.clone();
+            let password = connection.password;
+            if let Err(err) = SecureStorage::store_db_password(&connection.name, &password) {
+                self.error_message = Some(format!("Failed to store password: {}", err));
+                return;
             }
-        }
+
+            let db_connection = DbConnection {
+                uuid: connection.uuid,
+                name: connection.name,
+                db_type: connection.db_type,
+                host: connection.host,
+                port: connection.port,
+                username: connection.username,
+                database: connection.database,
+            };
+            // Update or add the connection
+            if !connection.is_new  {
+                if let Some(idx) = self.config.connections.iter().position(|c| c.uuid == connection.uuid) {
+                    self.config.connections[idx] = db_connection;
+                } else {
+                    self.config.connections.push(db_connection);
+                }
+            } else {
+                self.config.connections.push(db_connection);
+            }
+
+            // Save the config
+            self.config.save();
+            self.success_message = Some("Connection saved successfully!".to_string());
+            self.mode = AppMode::Connections;
+
     }
 
     pub fn send_message(&mut self) {

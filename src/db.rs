@@ -26,15 +26,19 @@ impl DatabaseManager {
         }
     }
 
-    pub async fn connect(&self, connection: &DbConnection) -> Result<(), String> {
+    pub async fn connect(&self, connection: &DbConnection, password: Option<String>) -> Result<(), String> {
         // Get password securely
-        let password = match SecureStorage::get_db_password(&connection.name) {
-            Ok(pwd) => pwd,
-            Err(_) => return Err("Password not found".to_string()),
+        let password = if password.is_some() {
+            password.unwrap()
+        } else {
+            match SecureStorage::get_db_password(&connection.name) {
+                Ok(pwd) => pwd,
+                Err(_) => return Err("Password not found".to_string()),
+            }
         };
 
         // Build connection string
-        let connection_string = connection.connection_string_template
+        let connection_string = connection.connection_string()
             .replace("{host}", &connection.host)
             .replace("{port}", &connection.port.to_string())
             .replace("{username}", &connection.username)

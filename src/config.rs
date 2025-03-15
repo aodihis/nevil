@@ -2,6 +2,7 @@ use crate::llm::llm::Provider;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
+use uuid::Uuid;
 
 #[derive(Serialize, Deserialize)]
 pub struct AppConfig {
@@ -17,16 +18,25 @@ pub struct LLMConfig {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct DbConnection {
+    pub uuid: Uuid,
     pub name: String,
     pub db_type: DbType,
     pub host: String,
     pub port: u16,
     pub username: String,
     pub database: String,
-    pub connection_string_template: String,
+    // pub connection_string_template: String,
     // Password will be stored securely separately
 }
 
+impl DbConnection {
+    pub fn connection_string(&self) -> String {
+        match self.db_type {
+            DbType::MySQL => {"mysql://{username}:{password}@{host}:{port}/{database}".to_string()}
+            DbType::PostgreSQL => {"postgres://{username}:{password}@{host}:{port}/{database}".to_string()}
+        }
+    }
+}
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub enum DbType {
     MySQL,

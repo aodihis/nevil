@@ -60,7 +60,7 @@ pub fn settings(ctx: &Context, app_state: &mut AppState){
         });
 
 
-        let mut api_key = &mut app_state.settings.api_key;
+        let api_key = &mut app_state.settings.api_key;
 
         ui.horizontal(|ui| {
             ui.label("API Key:");

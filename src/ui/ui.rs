@@ -1,93 +1,22 @@
 use egui::{Align, Context, Layout, RichText, ScrollArea, TextEdit};
 
 use crate::app::{AppMode, AppState, MessageSender};
-use crate::config::{DbConnection, DbType};
-use crate::ui::connection::new_connection;
-use crate::ui::left_panel::left_panel;
+use crate::ui::connection::connection_ui;
+use crate::ui::left_panel::left_panel_ui;
 use crate::ui::setting::settings;
 
 pub fn render_ui(ctx: &Context, app_state: &mut AppState) {
-    left_panel(ctx,app_state);
+    left_panel_ui(ctx, app_state);
 
     match app_state.mode {
         AppMode::Settings => settings(ctx, app_state),
-        AppMode::Connections => render_connections(ctx, app_state),
+        AppMode::Connections => connection_ui(ctx, app_state),
         AppMode::Query => render_query(ctx, app_state),
-        AppMode::NewConnection => new_connection(ctx, app_state)
+        AppMode::NewConnection => connection_ui(ctx, app_state)
     }
 }
 
 
-fn render_connections(ctx: &Context, app_state: &mut AppState) {
-    egui::CentralPanel::default().show(ctx, |ui| {
-        ui.heading("Database Connections");
-        ui.add_space(10.0);
-
-        if ui.button("Add New Connection").clicked() {
-            app_state.mode = AppMode::NewConnection;
-            app_state.new_connection = Some(DbConnection {
-                name: "New Connection".to_string(),
-                db_type: DbType::MySQL,
-                host: "localhost".to_string(),
-                port: 3306,
-                username: "root".to_string(),
-                database: "".to_string(),
-                connection_string_template: "mysql://{username}:{password}@{host}:{port}/{database}".to_string(),
-            });
-            app_state.new_connection_password = Some("".to_string());
-        }
-
-        ui.add_space(20.0);
-
-        ScrollArea::vertical().show(ui, |ui| {
-            for connection in app_state.config.connections.clone() {
-
-                ui.horizontal(|ui| {
-                    ui.label(RichText::new(&connection.name).size(16.0));
-                    ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                        if ui.button("Delete").clicked() {
-                            if let Some(idx) = app_state.config.connections.iter().position(|c| c.name == connection.name) {
-                                app_state.config.connections.remove(idx);
-                                app_state.config.save();
-                            }
-                        }
-
-                        if ui.button("Test").clicked() {
-                            app_state.test_connection(connection.name.clone());
-                        }
-
-                        if ui.button("Edit").clicked() {
-                            app_state.mode = AppMode::NewConnection;
-                            app_state.new_connection = Some(connection.clone());
-                            app_state.new_connection_password = Some("".to_string());
-                            app_state.editing_connection = true;
-                        }
-                    });
-                });
-
-                ui.horizontal(|ui| {
-                    ui.label(format!("Type: {}", match connection.db_type {
-                        DbType::MySQL => "MySQL",
-                        DbType::PostgreSQL => "PostgreSQL",
-                    }));
-                    ui.label(format!("Host: {}:{}", connection.host, connection.port));
-                    ui.label(format!("Database: {}", connection.database));
-                });
-
-                ui.separator();
-            }
-        });
-
-        // Display error/success messages
-        if let Some(ref err) = app_state.error_message {
-            ui.colored_label(egui::Color32::RED, err);
-        }
-
-        if let Some(ref success) = app_state.success_message {
-            ui.colored_label(egui::Color32::GREEN, success);
-        }
-    });
-}
 
 
 fn render_query(ctx: &Context, app_state: &mut AppState) {
