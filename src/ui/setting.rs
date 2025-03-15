@@ -60,8 +60,6 @@ pub fn settings(ctx: &Context, app_state: &mut AppState){
         });
 
 
-
-
         ui.horizontal(|ui| {
             ui.label("API Key:");
             ui.add(TextEdit::singleline(&mut app_state.settings.api_key).password(true));

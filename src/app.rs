@@ -128,38 +128,37 @@ impl AppState {
     }
 
     pub fn save_connection(&mut self) {
-            let connection = self.connection.clone();
-            let password = connection.password;
-            if let Err(err) = SecureStorage::store_db_password(&connection.name, &password) {
-                self.error_info = Some(format!("Failed to store password: {}", err));
-                return;
-            }
+        let connection = self.connection.clone();
+        let password = connection.password;
+        if let Err(err) = SecureStorage::store_db_password(&connection.name, &password) {
+            self.error_info = Some(format!("Failed to store password: {}", err));
+            return;
+        }
 
-            let db_connection = DbConnection {
-                uuid: connection.uuid,
-                name: connection.name,
-                db_type: connection.db_type,
-                host: connection.host,
-                port: connection.port,
-                username: connection.username,
-                database: connection.database,
-            };
-            // Update or add the connection
-            if !connection.is_new  {
-                if let Some(idx) = self.config.connections.iter().position(|c| c.uuid == connection.uuid) {
-                    self.config.connections[idx] = db_connection;
-                } else {
-                    self.config.connections.push(db_connection);
-                }
+        let db_connection = DbConnection {
+            uuid: connection.uuid,
+            name: connection.name,
+            db_type: connection.db_type,
+            host: connection.host,
+            port: connection.port,
+            username: connection.username,
+            database: connection.database,
+        };
+        // Update or add the connection
+        if !connection.is_new  {
+            if let Some(idx) = self.config.connections.iter().position(|c| c.uuid == connection.uuid) {
+                self.config.connections[idx] = db_connection;
             } else {
                 self.config.connections.push(db_connection);
             }
+        } else {
+            self.config.connections.push(db_connection);
+        }
 
-            // Save the config
-            self.config.save();
-            self.success_info = Some("Connection saved successfully!".to_string());
-            self.mode = AppMode::Connections;
-
+        // Save the config
+        self.config.save();
+        self.add_success_info("Connection saved successfully!".to_string());
+        self.mode = AppMode::Connections;
     }
 
     pub fn save_settings(&mut self) {
