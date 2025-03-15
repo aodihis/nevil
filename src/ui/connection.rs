@@ -96,8 +96,8 @@ pub fn connection_ui(ctx: &Context, app_state: &mut AppState) {
                 let db_manager = app_state.db_manager.clone();
 
                 // Test connection asynchronously
-                app_state.error_message = None;
-                app_state.success_message = Some("Testing connection...".to_string());
+                app_state.error_info = None;
+                app_state.success_info = Some("Testing connection...".to_string());
 
                 let ctx = ctx.clone();
                 let password = app_state.connection.password.clone();
@@ -124,9 +124,9 @@ pub fn connection_ui(ctx: &Context, app_state: &mut AppState) {
 
             if ui.button("Save Connection").clicked() {
                 if app_state.connection.name.trim().is_empty() {
-                    app_state.error_message = Some("Connection name cannot be empty".to_string());
+                    app_state.error_info = Some("Connection name cannot be empty".to_string());
                 } else if app_state.connection.database.trim().is_empty() {
-                    app_state.error_message = Some("Database name cannot be empty".to_string());
+                    app_state.error_info = Some("Database name cannot be empty".to_string());
                 } else {
                     app_state.save_connection();
                 }
@@ -135,11 +135,11 @@ pub fn connection_ui(ctx: &Context, app_state: &mut AppState) {
 
         // Display error/success messages
         ui.add_space(10.0);
-        if let Some(ref err) = app_state.error_message {
+        if let Some(ref err) = app_state.error_info {
             ui.colored_label(egui::Color32::RED, err);
         }
 
-        if let Some(ref success) = app_state.success_message {
+        if let Some(ref success) = app_state.success_info {
             ui.colored_label(egui::Color32::GREEN, success);
         }
 
@@ -157,7 +157,7 @@ pub fn connection_ui(ctx: &Context, app_state: &mut AppState) {
             if ui.button("Help me set up this connection").clicked() {
                 // This would call an AI-assisted setup function
                 // For now, we'll just show a placeholder message
-                app_state.success_message = Some("AI-assisted setup would launch here".to_string());
+                app_state.success_info = Some("AI-assisted setup would launch here".to_string());
 
                 // In a complete implementation, this would:
                 // 1. Launch a dialog to ask the user for high-level info about their database

@@ -75,21 +75,21 @@ pub fn settings(ctx: &Context, app_state: &mut AppState){
                 if let Err(err) = crate::security::SecureStorage::store_api_key(
                     &api_key
                 ) {
-                    app_state.error_message = Some(format!("Failed to store API key: {}", err));
+                    app_state.error_info = Some(format!("Failed to store API key: {}", err));
                 } else {
                     app_state.config.save();
-                    app_state.error_message = None;
-                    app_state.success_message = Some("API settings saved successfully!".to_string());
+                    app_state.error_info = None;
+                    app_state.success_info = Some("API settings saved successfully!".to_string());
                 }
             }
         }
 
         // Display error/success messages
-        if let Some(ref err) = app_state.error_message {
+        if let Some(ref err) = app_state.error_info {
             ui.colored_label(egui::Color32::RED, err);
         }
 
-        if let Some(ref success) = app_state.success_message {
+        if let Some(ref success) = app_state.success_info {
             ui.colored_label(egui::Color32::GREEN, success);
         }
     });

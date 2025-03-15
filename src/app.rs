@@ -27,8 +27,8 @@ pub struct AppState {
     pub current_message: String,
     pub query_result: Option<QueryResult>,
     pub connection: Connection,
-    pub error_message: Option<String>,
-    pub success_message: Option<String>,
+    pub error_info: Option<String>,
+    pub success_info: Option<String>,
     pub runtime: Runtime,
 }
 
@@ -92,8 +92,8 @@ impl DBQueryApp {
                 current_message: String::new(),
                 query_result: None,
                 connection: Connection::new(),
-                error_message: None,
-                success_message: None,
+                error_info: None,
+                success_info: None,
                 runtime,
             },
         }
@@ -109,7 +109,7 @@ impl AppState {
         let connection = match connections.iter().find(|c| c.name == connection_name) {
             Some(conn) => conn.clone(),
             None => {
-                self.error_message = Some(format!("Connection '{}' not found", connection_name));
+                self.error_info = Some(format!("Connection '{}' not found", connection_name));
                 return;
             }
         };
@@ -131,7 +131,7 @@ impl AppState {
             let connection = self.connection.clone();
             let password = connection.password;
             if let Err(err) = SecureStorage::store_db_password(&connection.name, &password) {
-                self.error_message = Some(format!("Failed to store password: {}", err));
+                self.error_info = Some(format!("Failed to store password: {}", err));
                 return;
             }
 
@@ -157,7 +157,7 @@ impl AppState {
 
             // Save the config
             self.config.save();
-            self.success_message = Some("Connection saved successfully!".to_string());
+            self.success_info = Some("Connection saved successfully!".to_string());
             self.mode = AppMode::Connections;
 
     }
@@ -243,6 +243,21 @@ impl AppState {
         // For simplicity, we'll assume the UI will check for the result on the next frame
         // This is a placeholder and not fully implemented
         // self.pending_query = Some(rx);
+    }
+
+    pub fn clear_info(&mut self) {
+        self.error_info = None;
+        self.success_info = None;
+    }
+
+    pub fn add_success_info(&mut self, message: String) {
+        self.clear_message();
+        self.success_info = Some(message);
+    }
+
+    pub fn error_success_info(&mut self, message: String) {
+        self.clear_message();
+        self.error_info = Some(message);
     }
 }
 
