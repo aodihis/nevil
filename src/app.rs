@@ -10,10 +10,10 @@ use std::sync::Arc;
 use tokio::runtime::Runtime;
 
 pub enum AppMode {
+    Home,
     Query,
     Connections,
     Settings,
-    NewConnection,
 }
 
 pub struct AppState {

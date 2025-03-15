@@ -86,6 +86,12 @@ pub fn connection_ui(ctx: &Context, app_state: &mut AppState) {
             if ui.button("Cancel").clicked() {
                 app_state.mode = AppMode::Connections;
             }
+
+            if app_state.connection.is_new {
+                if ui.button("Remove Connection").clicked() {
+                    app_state.mode = AppMode::Home;
+                }
+            }
             if ui.button("Test Connection").clicked() {
                 // Create a clone of connection for testing
                 let test_connection = DbConnection {

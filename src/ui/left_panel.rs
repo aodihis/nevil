@@ -18,7 +18,7 @@ pub fn side_menu(ui: &mut egui::Ui, app_state: &mut AppState) {
                 app_state.mode = AppMode::Settings;
             }
             if ui.add(egui::Button::new("➕").frame(false)).clicked() {
-                app_state.mode = AppMode::NewConnection;
+                app_state.mode = AppMode::Connections;
                 app_state.connection = Connection::new();
             }
         });
