@@ -25,8 +25,6 @@ pub struct DbConnection {
     pub port: u16,
     pub username: String,
     pub database: String,
-    // pub connection_string_template: String,
-    // Password will be stored securely separately
 }
 
 impl DbConnection {
