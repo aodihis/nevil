@@ -39,7 +39,7 @@ impl DatabaseManager {
         };
 
         // Build connection string
-        let connection_string = connection.connection_string()
+        let connection_string = connection.connection_string_template()
             .replace("{host}", &connection.host)
             .replace("{port}", &connection.port.to_string())
             .replace("{username}", &connection.username)
