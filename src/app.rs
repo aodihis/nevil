@@ -8,6 +8,7 @@ use crate::ui::ui::render_ui;
 use eframe::egui;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
+use uuid::Uuid;
 
 pub enum AppMode {
     Home,
@@ -129,12 +130,11 @@ impl AppState {
         });
     }
 
-    pub fn save_connection(&mut self) {
+    pub fn save_connection(&mut self) -> Result<(), String> {
         let connection = self.connection.clone();
         let password = connection.password;
         if let Err(err) = SecureStorage::store_db_password(&connection.uuid.to_string(), &password) {
-            self.connection.error_message = Some(format!("Failed to store password: {}", err));
-            return;
+            return Err(err.to_string());
         }
 
         let db_connection = DbConnection {
@@ -159,11 +159,16 @@ impl AppState {
 
         // Save the config
         self.config.save();
-        self.connection.success_message = Some("Connection saved successfully!".to_string());
-        self.mode = AppMode::Connections;
+        Ok(())
     }
 
-    pub fn save_settings(&mut self) {
+    pub fn remove_connection(&mut self, connection_uuid: &Uuid) {
+        let index = self.config.connections.iter().position(|c| c.uuid == *connection_uuid);
+        if let Some(index) = index {
+
+        }
+    }
+    pub fn save_settings(&mut self) -> Result<(), String> {
         self.config.llm_api.provider = self.settings.provider.clone();
         self.config.llm_api.model = self.settings.model.clone();
         // Save API key securely
@@ -171,98 +176,95 @@ impl AppState {
             if let Err(err) = SecureStorage::store_api_key(
                 &self.settings.api_key
             ) {
-                self.settings.success_message = None;
-                self.settings.error_message = Some(format!("Failed to store API key: {}", err));
-            } else {
-                self.config.save();
-                self.settings.error_message = None;
-                self.settings.success_message = Some("API settings saved successfully!".to_string());
+                return Err(err.to_string());
             }
+            self.config.save();
         }
+        Ok(())
     }
 
-    pub fn send_message(&mut self) {
-        if self.current_message.trim().is_empty() {
-            return;
-        }
-
-        // Add user message to chat
-        let message = self.current_message.clone();
-        self.chat_messages.push(ChatMessage {
-            sender: MessageSender::User,
-            content: message.clone(),
-            is_sql: false,
-        });
-        self.current_message.clear();
-
-        // Check if we have an active connection
-        if self.active_connection.is_none() {
-            self.chat_messages.push(ChatMessage {
-                sender: MessageSender::System,
-                content: "Please select an active database connection first.".to_string(),
-                is_sql: false,
-            });
-            return;
-        }
-
-        let active_connection = self.active_connection.clone().unwrap();
-        let db_manager = self.db_manager.clone();
-        let llm_client = match &self.llm_client {
-            Some(client) => (*client).clone(),
-            None => {
-                self.chat_messages.push(ChatMessage {
-                    sender: MessageSender::System,
-                    content: "LLM API is not configured. Please set up API settings first.".to_string(),
-                    is_sql: false,
-                });
-                return;
-            }
-        };
-
-        // Get schema info and generate SQL (asynchronously)
-        let message_clone = message.clone();
-
-        // Use an oneshot channel to get the result back to the UI thread
-        let (tx, _rx) = tokio::sync::oneshot::channel();
-
-
-        self.runtime.spawn(async move {
-            // Get schema info
-            let schema_info = match db_manager.get_schema_info(&active_connection).await {
-                Ok(info) => info,
-                Err(err) => {
-                    let _ = tx.send(Err(format!("Failed to get schema info: {}", err)));
-                    return;
-                }
-            };
-
-            // Generate SQL query
-            let sql = match llm_client.generate_sql(&message_clone, &schema_info).await {
-                Ok(sql) => sql,
-                Err(err) => {
-                    let _ = tx.send(Err(format!("Failed to generate SQL: {}", err)));
-                    return;
-                }
-            };
-
-            // Execute the query
-            match db_manager.execute_query(&active_connection, &sql).await {
-                Ok(result) => {
-                    let _ = tx.send(Ok((sql, result)));
-                },
-                Err(err) => {
-                    let _ = tx.send(Err(format!("Failed to execute query: {}", err)));
-                }
-            }
-
-        });
-
-        // Store the receiver for later use
-        // In a real application, you would use a state machine or callback mechanism
-        // For simplicity, we'll assume the UI will check for the result on the next frame
-        // This is a placeholder and not fully implemented
-        // self.pending_query = Some(rx);
-    }
+    // pub fn send_message(&mut self) {
+    //     if self.current_message.trim().is_empty() {
+    //         return;
+    //     }
+    //
+    //     // Add user message to chat
+    //     let message = self.current_message.clone();
+    //     self.chat_messages.push(ChatMessage {
+    //         sender: MessageSender::User,
+    //         content: message.clone(),
+    //         is_sql: false,
+    //     });
+    //     self.current_message.clear();
+    //
+    //     // Check if we have an active connection
+    //     if self.active_connection.is_none() {
+    //         self.chat_messages.push(ChatMessage {
+    //             sender: MessageSender::System,
+    //             content: "Please select an active database connection first.".to_string(),
+    //             is_sql: false,
+    //         });
+    //         return;
+    //     }
+    //
+    //     let active_connection = self.active_connection.clone().unwrap();
+    //     let db_manager = self.db_manager.clone();
+    //     let llm_client = match &self.llm_client {
+    //         Some(client) => (*client).clone(),
+    //         None => {
+    //             self.chat_messages.push(ChatMessage {
+    //                 sender: MessageSender::System,
+    //                 content: "LLM API is not configured. Please set up API settings first.".to_string(),
+    //                 is_sql: false,
+    //             });
+    //             return;
+    //         }
+    //     };
+    //
+    //     // Get schema info and generate SQL (asynchronously)
+    //     let message_clone = message.clone();
+    //
+    //     // Use an oneshot channel to get the result back to the UI thread
+    //     let (tx, _rx) = tokio::sync::oneshot::channel();
+    //
+    //
+    //     self.runtime.spawn(async move {
+    //         // Get schema info
+    //         // let schema_info = match db_manager.get_schema_info(&active_connection).await {
+    //         //     Ok(info) => info,
+    //         //     Err(err) => {
+    //         //         let _ = tx.send(Err(format!("Failed to get schema info: {}", err)));
+    //         //         return;
+    //         //     }
+    //         // };
+    //         //
+    //         // // Generate SQL query
+    //         // let sql = match llm_client.generate_sql(&message_clone, &schema_info).await {
+    //         //     Ok(sql) => sql,
+    //         //     Err(err) => {
+    //         //         let _ = tx.send(Err(format!("Failed to generate SQL: {}", err)));
+    //         //         return;
+    //         //     }
+    //         // };
+    //         //
+    //         // // Execute the query
+    //         // match db_manager.execute_query(&active_connection, &sql).await {
+    //         //     Ok(result) => {
+    //         //         let _ = tx.send(Ok((sql, result)));
+    //         //     },
+    //         //     Err(err) => {
+    //         //         let _ = tx.send(Err(format!("Failed to execute query: {}", err)));
+    //         //     }
+    //         // }
+    //
+    //     });
+    //
+    //     // Store the receiver for later use
+    //     // In a real application, you would use a state machine or callback mechanism
+    //     // For simplicity, we'll assume the UI will check for the result on the next frame
+    //     // This is a placeholder and not fully implemented
+    //     // self.pending_query = Some(rx);
+    // }
 }
 
 impl eframe::App for DBQueryApp {

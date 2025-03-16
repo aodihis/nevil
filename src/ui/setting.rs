@@ -68,7 +68,13 @@ pub fn render_settings(ctx: &Context, app_state: &mut AppState) {
             });
 
             if ui.button("Save API Settings").clicked() {
-                app_state.save_settings();
+                if let Err(err) = app_state.save_settings() {
+                    app_state.settings.success_message = None;
+                    app_state.settings.error_message = Some(format!("Failed to store API key: {}", err));
+                } else {
+                    app_state.settings.error_message = None;
+                    app_state.settings.success_message = Some("API settings saved successfully!".to_string());
+                }
             }
 
             // Display error/success messages

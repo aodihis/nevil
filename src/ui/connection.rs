@@ -16,7 +16,7 @@ pub struct Connection {
     pub password: String,
     pub success_message: Option<String>,
     pub error_message: Option<String>,
-
+    confirm_delete: bool,
 }
 
 impl Connection {
@@ -33,6 +33,7 @@ impl Connection {
             password: "".to_string(),
             success_message: None,
             error_message: None,
+            confirm_delete: false,
         }
     }
 }
@@ -89,7 +90,7 @@ pub fn connection_ui(ctx: &Context, app_state: &mut AppState) {
 
             if app_state.connection.is_new {
                 if ui.button("Remove Connection").clicked() {
-                    app_state.mode = AppMode::Home;
+                    app_state.connection.confirm_delete = false;
                 }
             }
             if ui.button("Test Connection").clicked() {
@@ -140,7 +141,12 @@ pub fn connection_ui(ctx: &Context, app_state: &mut AppState) {
                 } else if app_state.connection.database.trim().is_empty() {
                     app_state.connection.error_message = Some("Database name cannot be empty".to_string());
                 } else {
-                    app_state.save_connection();
+                    if let Err(err) = app_state.save_connection() {
+                        app_state.connection.error_message = Some(format!("Failed to store password: {}", err));
+                    } else {
+                        app_state.connection.success_message = Some("Connection saved successfully!".to_string());
+                        app_state.mode = AppMode::Connections;
+                    }
                 }
             }
         });
@@ -153,6 +159,27 @@ pub fn connection_ui(ctx: &Context, app_state: &mut AppState) {
 
         if let Some(ref success) = app_state.connection.success_message {
             ui.colored_label(egui::Color32::GREEN, success);
+        }
+
+        if app_state.connection.confirm_delete {
+            Window::new("Confirm Save")
+                .collapsible(false)
+                .resizable(false)
+                .show(ctx, |ui| {
+                    ui.label("Are you sure you want to remove this connection?");
+
+                    ui.horizontal(|ui| {
+                        if ui.button("Yes").clicked() {
+                            app_state.connection.error_message = Some("Connection saved!".to_string());
+                            app_state.connection.confirm_delete = false;
+                            app_state.mode = AppMode::Home;
+                        }
+
+                        if ui.button("No").clicked() {
+                            app_state.connection.confirm_delete = false;
+                        }
+                    });
+                });
         }
 
         // Add AI-assisted setup option
