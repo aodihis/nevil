@@ -1,4 +1,12 @@
+use serde::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize)]
+pub struct ClaudeRequest {
+    pub model: String,
+    pub messages: Vec<crate::llm::llm::Message>,
+    pub max_tokens: u32,
+    pub temperature: f32,
+}
 
 pub enum Model {
     Claude37,

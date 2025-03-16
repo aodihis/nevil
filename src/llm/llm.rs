@@ -1,7 +1,7 @@
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-
+use crate::llm::claude;
 use crate::config::LLMConfig;
 use crate::security::SecureStorage;
 
@@ -27,15 +27,7 @@ pub struct LLMClient {
 }
 
 #[derive(Serialize, Deserialize)]
-struct ClaudeRequest {
-    model: String,
-    messages: Vec<Message>,
-    max_tokens: u32,
-    temperature: f32,
-}
-
-#[derive(Serialize, Deserialize)]
-struct Message {
+pub struct Message {
     role: String,
     content: String,
 }
@@ -78,7 +70,14 @@ impl LLMClient {
             },
         ];
 
-        let request = ClaudeRequest {
+        let provider = self.config.provider.clone().expect("LLM configuration missing");
+
+        match provider {
+            Provider::OpenAI => {},
+            Provider::Claude => {}
+        }
+
+        let request = claude::ClaudeRequest {
             model: self.config.model.clone(),
             messages,
             max_tokens: 1000,
