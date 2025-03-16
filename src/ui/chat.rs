@@ -7,7 +7,7 @@ pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
     egui::CentralPanel::default().show(ctx, |ui| {
         // Chat area
         let available_height = ui.available_height();
-        let chat_height = available_height * 0.6;
+        let chat_height = available_height * 0.9;
         let result_height = available_height * 0.4;
 
         ScrollArea::vertical()
@@ -49,8 +49,10 @@ pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
 
         // Input area
         ui.separator();
+        ui.add_space(4.0);
         ui.horizontal(|ui| {
             let text_edit = TextEdit::multiline(&mut app_state.current_message)
+                .frame(true)
                 .desired_width(ui.available_width() - 100.0)
                 .desired_rows(2)
                 .hint_text("Ask a question about your data...");

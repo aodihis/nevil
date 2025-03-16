@@ -171,6 +171,7 @@ impl AppState {
         };
         let _ = SecureStorage::remove_db_password(&connection_uuid.to_string());
         self.config.connections.remove(index);
+        self.config.save();
         Ok(())
     }
     pub fn save_settings(&mut self) -> Result<(), String> {
