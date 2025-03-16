@@ -12,7 +12,7 @@ use uuid::Uuid;
 
 pub enum AppMode {
     Home,
-    Query,
+    Chat,
     Connections,
     Settings,
 }
@@ -87,7 +87,7 @@ impl DBQueryApp {
                     success_message: None,
                     error_message: None,
                 },
-                mode: AppMode::Query,
+                mode: AppMode::Chat,
                 db_manager,
                 llm_client,
                 active_connection: None,
@@ -169,7 +169,7 @@ impl AppState {
         } else {
             return Err(format!("Connection '{}' not found", connection_uuid));
         };
-        SecureStorage::remove_db_password(&connection_uuid.to_string()).expect("Failed to db remove password");
+        let _ = SecureStorage::remove_db_password(&connection_uuid.to_string());
         self.config.connections.remove(index);
         Ok(())
     }

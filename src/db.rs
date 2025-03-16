@@ -73,7 +73,7 @@ impl DatabaseManager {
         Ok(())
     }
 
-    pub async fn get_schema_info(&self, connection_uuid: &uuid) -> Result<String, String> {
+    pub async fn get_schema_info(&self, connection_uuid: &Uuid) -> Result<String, String> {
         let connections = self.connections.lock().await;
 
         // Find the connection
@@ -192,7 +192,7 @@ impl DatabaseManager {
         }
     }
 
-    pub async fn execute_query(&self, connection_uuid: &uuid, query: &str) -> Result<QueryResult, String> {
+    pub async fn execute_query(&self, connection_uuid: &Uuid, query: &str) -> Result<QueryResult, String> {
         let connections = self.connections.lock().await;
 
         // Find the connection

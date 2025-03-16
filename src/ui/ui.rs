@@ -1,6 +1,7 @@
 use egui::{Align, Context, Layout, RichText, ScrollArea, TextEdit};
 
 use crate::app::{AppMode, AppState, MessageSender};
+use crate::ui::chat::render_chat;
 use crate::ui::connection::connection_ui;
 use crate::ui::home::render_home;
 use crate::ui::left_panel::left_panel_ui;
@@ -13,7 +14,7 @@ pub fn render_ui(ctx: &Context, app_state: &mut AppState) {
         AppMode::Home => render_home(),
         AppMode::Settings => render_settings(ctx, app_state),
         AppMode::Connections => connection_ui(ctx, app_state),
-        AppMode::Query => render_query(ctx, app_state)
+        AppMode::Chat => render_chat(ctx, app_state)
     }
 }
 
@@ -127,7 +128,7 @@ fn render_query(ctx: &Context, app_state: &mut AppState) {
             ui.add(text_edit);
 
             if ui.button("Send").clicked() {
-                app_state.send_message();
+                // app_state.send_message();
             }
         });
     });

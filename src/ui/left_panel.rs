@@ -29,7 +29,10 @@ pub fn side_menu(ui: &mut egui::Ui, app_state: &mut AppState) {
 pub fn connection_list(ui: &mut egui::Ui, app_state: &mut AppState) {
     for con in &app_state.config.connections {
         ui.horizontal(|ui| {
-            ui.heading(con.name.clone());
+            if ui.add(egui::Button::new(con.name.clone()).frame(false)).clicked() {
+                app_state.mode = AppMode::Chat;
+            }
+
             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                 if ui.add(egui::Button::new("⚙").frame(false)).clicked() {
                     app_state.connection.is_new = false;
@@ -43,9 +46,12 @@ pub fn connection_list(ui: &mut egui::Ui, app_state: &mut AppState) {
                     if let Ok(pwd) = SecureStorage::get_db_password(&con.uuid.to_string()) {
                         app_state.connection.password = pwd;
                     }
+                    app_state.connection.confirm_delete = false;
                     app_state.mode = AppMode::Connections;
                 }
             });
         });
+
+        ui.separator();
     }
 }
