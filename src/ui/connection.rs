@@ -16,7 +16,7 @@ pub struct Connection {
     pub password: String,
     pub success_message: Option<String>,
     pub error_message: Option<String>,
-    confirm_delete: bool,
+    pub confirm_delete: bool,
 }
 
 impl Connection {
@@ -88,9 +88,9 @@ pub fn connection_ui(ctx: &Context, app_state: &mut AppState) {
                 app_state.mode = AppMode::Connections;
             }
 
-            if app_state.connection.is_new {
+            if !app_state.connection.is_new {
                 if ui.button("Remove Connection").clicked() {
-                    app_state.connection.confirm_delete = false;
+                    app_state.connection.confirm_delete = true;
                 }
             }
             if ui.button("Test Connection").clicked() {
