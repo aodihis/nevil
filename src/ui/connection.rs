@@ -170,9 +170,12 @@ pub fn connection_ui(ctx: &Context, app_state: &mut AppState) {
 
                     ui.horizontal(|ui| {
                         if ui.button("Yes").clicked() {
-                            app_state.connection.error_message = Some("Connection saved!".to_string());
                             app_state.connection.confirm_delete = false;
-                            app_state.mode = AppMode::Home;
+                            if let Err(err) = app_state.remove_connection(app_state.connection.uuid.clone()) {
+                                app_state.connection.error_message = Some(format!("Failed to remove connection: {}", err));
+                            } else {
+                                app_state.mode = AppMode::Home;
+                            }
                         }
 
                         if ui.button("No").clicked() {

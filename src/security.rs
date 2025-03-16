@@ -31,6 +31,12 @@ impl SecureStorage {
         Ok(password)
     }
 
+    pub fn remove_db_password(uuid: &str) -> Result<(), SecurityError> {
+        let entry = Entry::new(Service::DbAssistant.as_str(), uuid)?;
+        entry.delete_credential()?;
+        Ok(())
+    }
+
     // Store API key securely
     pub fn store_api_key(api_key: &str) -> Result<(), SecurityError> {
         let entry = Entry::new(Service::LlmAPI.as_str(), "api_key")?;

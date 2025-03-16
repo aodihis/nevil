@@ -162,11 +162,16 @@ impl AppState {
         Ok(())
     }
 
-    pub fn remove_connection(&mut self, connection_uuid: &Uuid) {
-        let index = self.config.connections.iter().position(|c| c.uuid == *connection_uuid);
-        if let Some(index) = index {
-
-        }
+    pub fn remove_connection(&mut self, connection_uuid: Uuid) -> Result<(), String>{
+        let index = self.config.connections.iter().position(|c| c.uuid == connection_uuid);
+        let index = if let Some(index) = index {
+            index
+        } else {
+            return Err(format!("Connection '{}' not found", connection_uuid));
+        };
+        SecureStorage::remove_db_password(&connection_uuid.to_string()).expect("Failed to db remove password");
+        self.config.connections.remove(index);
+        Ok(())
     }
     pub fn save_settings(&mut self) -> Result<(), String> {
         self.config.llm_api.provider = self.settings.provider.clone();
