@@ -2,6 +2,7 @@ use sqlx::{mysql::MySqlPoolOptions, postgres::PgPoolOptions, MySqlPool, PgPool, 
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use sqlx::Column;
+use uuid::Uuid;
 use crate::config::{DbConnection, DbType};
 use crate::security::SecureStorage;
 
@@ -11,7 +12,7 @@ pub enum DbPool {
 }
 
 pub struct DatabaseManager {
-    connections: Arc<Mutex<Vec<(String, DbPool)>>>,
+    connections: Arc<Mutex<Vec<(Uuid, DbPool)>>>,
 }
 
 pub struct QueryResult {
@@ -67,17 +68,17 @@ impl DatabaseManager {
 
         // Store the connection
         let mut connections = self.connections.lock().await;
-        connections.push((connection.name.clone(), pool));
+        connections.push((connection.uuid.clone(), pool));
 
         Ok(())
     }
 
-    pub async fn get_schema_info(&self, connection_name: &str) -> Result<String, String> {
+    pub async fn get_schema_info(&self, connection_uuid: &uuid) -> Result<String, String> {
         let connections = self.connections.lock().await;
 
         // Find the connection
         let connection = connections.iter()
-            .find(|(name, _)| name == connection_name)
+            .find(|(uuid, _)| uuid == connection_uuid)
             .ok_or_else(|| "Connection not found".to_string())?;
 
         // Query schema information based on database type
@@ -191,12 +192,12 @@ impl DatabaseManager {
         }
     }
 
-    pub async fn execute_query(&self, connection_name: &str, query: &str) -> Result<QueryResult, String> {
+    pub async fn execute_query(&self, connection_uuid: &uuid, query: &str) -> Result<QueryResult, String> {
         let connections = self.connections.lock().await;
 
         // Find the connection
         let connection = connections.iter()
-            .find(|(name, _)| name == connection_name)
+            .find(|(uuid, _)| uuid == connection_uuid)
             .ok_or_else(|| "Connection not found".to_string())?;
 
         // Execute query based on database type
