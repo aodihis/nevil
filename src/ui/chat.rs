@@ -1,6 +1,5 @@
-use eframe::emath::Align;
-use egui::{Context, Layout, RichText, ScrollArea, TextEdit};
 use crate::app::{AppState, MessageSender};
+use egui::{Context, RichText, ScrollArea, TextEdit};
 
 pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
 
@@ -8,7 +7,6 @@ pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
         // Chat area
         let available_height = ui.available_height();
         let chat_height = available_height * 0.9;
-        let result_height = available_height * 0.4;
 
         ScrollArea::vertical()
             .auto_shrink([false; 2])

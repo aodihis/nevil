@@ -87,7 +87,7 @@ impl DBQueryApp {
                     success_message: None,
                     error_message: None,
                 },
-                mode: AppMode::Chat,
+                mode: AppMode::Home,
                 db_manager,
                 llm_client,
                 active_connection: None,
