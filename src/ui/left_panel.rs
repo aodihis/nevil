@@ -35,18 +35,19 @@ pub fn connection_list(ui: &mut egui::Ui, app_state: &mut AppState) {
 
             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                 if ui.add(egui::Button::new("⚙").frame(false)).clicked() {
-                    app_state.connection.is_new = false;
-                    app_state.connection.uuid = con.uuid.clone();
-                    app_state.connection.name = con.name.clone();
-                    app_state.connection.database = con.database.clone();
-                    app_state.connection.host = con.host.clone();
-                    app_state.connection.port = con.port.clone();
-                    app_state.connection.db_type = con.db_type.clone();
-                    app_state.connection.username = con.username.clone();
+                    let mut existing_connection = Connection::new();
+                    existing_connection.is_new = false;
+                    existing_connection.uuid = con.uuid.clone();
+                    existing_connection.name = con.name.clone();
+                    existing_connection.database = con.database.clone();
+                    existing_connection.host = con.host.clone();
+                    existing_connection.port = con.port.clone();
+                    existing_connection.db_type = con.db_type.clone();
+                    existing_connection.username = con.username.clone();
                     if let Ok(pwd) = SecureStorage::get_db_password(&con.uuid.to_string()) {
-                        app_state.connection.password = pwd;
+                        existing_connection.password = pwd;
                     }
-                    app_state.connection.confirm_delete = false;
+                    app_state.connection = existing_connection;
                     app_state.mode = AppMode::Connections;
                 }
             });

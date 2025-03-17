@@ -119,7 +119,7 @@ impl AppState {
 
         // Test the connection asynchronously
         self.runtime.spawn(async move {
-            if let Err(err) = db_manager_clone.connect(&connection, None).await {
+            if let Err(err) = db_manager_clone.connect(&connection, None, true).await {
                 // Handle error in UI thread
                 // This would require a channel or another mechanism to communicate back to the UI thread
                 // For simplicity, we'll just print the error

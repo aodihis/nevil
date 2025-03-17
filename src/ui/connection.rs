@@ -3,7 +3,6 @@ use crate::config::{DbConnection, DbType};
 use egui::{Context, TextEdit, Window};
 use uuid::Uuid;
 
-#[derive(Clone)]
 pub struct Connection {
     pub uuid: Uuid,
     pub is_new: bool,
@@ -14,9 +13,33 @@ pub struct Connection {
     pub username: String,
     pub database: String,
     pub password: String,
-    pub success_message: Option<String>,
-    pub error_message: Option<String>,
-    pub confirm_delete: bool,
+    success_message: Option<String>,
+    error_message: Option<String>,
+    loading_message: Option<String>,
+    confirm_delete: bool,
+    rx: Option<tokio::sync::mpsc::Receiver<Result<(), String>>>
+}
+
+impl Clone for Connection {
+    fn clone(&self) -> Self {
+        Self {
+            uuid: self.uuid,
+            is_new: self.is_new,
+            name: self.name.clone(),
+            db_type: self.db_type.clone(),
+            host: self.host.clone(),
+            port: self.port,
+            username: self.username.clone(),
+            database: self.database.clone(),
+            password: self.password.clone(),
+            success_message: None,
+            error_message: None,
+            loading_message: None,
+            confirm_delete: false,
+            rx: None,
+        }
+    }
+
 }
 
 impl Connection {
@@ -33,7 +56,9 @@ impl Connection {
             password: "".to_string(),
             success_message: None,
             error_message: None,
+            loading_message: None,
             confirm_delete: false,
+            rx: None,
         }
     }
 }
@@ -108,32 +133,25 @@ pub fn connection_ui(ctx: &Context, app_state: &mut AppState) {
 
                 // Test connection asynchronously
                 app_state.connection.error_message = None;
-                app_state.connection.success_message = Some("Testing connection...".to_string());
+                app_state.connection.success_message = None;
+                app_state.connection.loading_message = Some("Testing connection...".to_string());
 
-                let ctx = ctx.clone();
                 let password = app_state.connection.password.clone();
+                let (tx, rx) = tokio::sync::mpsc::channel(1);
+                app_state.connection.rx = Some(rx);
                 // This would be better with a callback mechanism
                 app_state.runtime.spawn(async move {
-                    if let Err(err) = db_manager.connect(&test_connection, Some(password)).await {
-                        let res = format!("Connection test failed: {}", err);
-                        eprintln!("{}", res);
-                        Window::new("DB Connection Result")
-                            .collapsible(false)
-                            .resizable(false)
-                            .auto_sized()
-                            .anchor(egui::Align2::CENTER_TOP, egui::Vec2::new(0.0, 20.0))
-                            .show(&ctx, |ui| {
-                                ui.label(res);
-                            });
-
-                        // In a complete implementation, we would use a message passing system to update the UI
+                    if let Err(err) = db_manager.connect(&test_connection, Some(password), true).await {
+                        tx.send(Err(err)).await.ok();
                     } else {
-                        eprintln!("Connection test successful");
+                        tx.send(Ok(())).await.ok();
                     }
                 });
+
             }
 
             if ui.button("Save Connection").clicked() {
+                app_state.connection.loading_message = None;
                 app_state.connection.error_message = None;
                 app_state.connection.success_message = None;
                 if app_state.connection.name.trim().is_empty() {
@@ -157,8 +175,33 @@ pub fn connection_ui(ctx: &Context, app_state: &mut AppState) {
             ui.colored_label(egui::Color32::RED, err);
         }
 
+        if let Some(ref success) = app_state.connection.loading_message {
+            ui.horizontal(|ui| {
+                ui.spinner(); // Show a loading spinner
+                ui.colored_label(egui::Color32::YELLOW, success); // Yellow for "in progress"
+            });
+        }
         if let Some(ref success) = app_state.connection.success_message {
             ui.colored_label(egui::Color32::GREEN, success);
+        }
+
+        if let Some(ref mut rx) = app_state.connection.rx {
+            if let Ok(res) = rx.try_recv() {
+            match res {
+                Ok(_) => {
+                    app_state.connection.error_message = None;
+                    app_state.connection.loading_message = None;
+                    app_state.connection.success_message = Some("Connection test successful".to_string());
+                },
+                Err(error_msg) => {
+                    let res = format!("Connection test failed: {}", error_msg);
+
+                    app_state.connection.loading_message = None;
+                    app_state.connection.success_message = None;
+                    app_state.connection.error_message = Some(res);
+                }
+            }
+        }
         }
 
         if app_state.connection.confirm_delete {
@@ -172,6 +215,8 @@ pub fn connection_ui(ctx: &Context, app_state: &mut AppState) {
                         if ui.button("Yes").clicked() {
                             app_state.connection.confirm_delete = false;
                             if let Err(err) = app_state.remove_connection(app_state.connection.uuid.clone()) {
+                                app_state.connection.loading_message = None;
+                                app_state.connection.success_message = None;
                                 app_state.connection.error_message = Some(format!("Failed to remove connection: {}", err));
                             } else {
                                 app_state.mode = AppMode::Home;
@@ -183,29 +228,6 @@ pub fn connection_ui(ctx: &Context, app_state: &mut AppState) {
                         }
                     });
                 });
-        }
-
-        // Add AI-assisted setup option
-        if app_state.llm_client.is_some() {
-            ui.add_space(20.0);
-            ui.separator();
-            ui.add_space(10.0);
-
-            ui.heading("AI-Assisted Setup");
-            ui.label("Need help setting up your connection? The AI can help you configure it.");
-
-            ui.add_space(5.0);
-
-            if ui.button("Help me set up this connection").clicked() {
-                // This would call an AI-assisted setup function
-                // For now, we'll just show a placeholder message
-                app_state.success_info = Some("AI-assisted setup would launch here".to_string());
-
-                // In a complete implementation, this would:
-                // 1. Launch a dialog to ask the user for high-level info about their database
-                // 2. Use the LLM to generate connection parameters
-                // 3. Pre-fill the form with these parameters
-            }
         }
 
     });

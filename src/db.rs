@@ -1,5 +1,6 @@
 use sqlx::{mysql::MySqlPoolOptions, postgres::PgPoolOptions, MySqlPool, PgPool, Row};
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::sync::Mutex;
 use sqlx::Column;
 use uuid::Uuid;
@@ -27,7 +28,7 @@ impl DatabaseManager {
         }
     }
 
-    pub async fn connect(&self, connection: &DbConnection, password: Option<String>) -> Result<(), String> {
+    pub async fn connect(&self, connection: &DbConnection, password: Option<String>, is_temp: bool) -> Result<(), String> {
         // Get password securely
         let password = if password.is_some() {
             password.unwrap()
@@ -46,10 +47,12 @@ impl DatabaseManager {
             .replace("{password}", &password)
             .replace("{database}", &connection.database);
 
+        let timeout_duration = Duration::from_secs(5);
         // Create pool based on database type
         let pool = match connection.db_type {
             DbType::MySQL => {
                 let pool = MySqlPoolOptions::new()
+                    .acquire_timeout(timeout_duration)
                     .max_connections(5)
                     .connect(&connection_string)
                     .await
@@ -58,6 +61,7 @@ impl DatabaseManager {
             },
             DbType::PostgreSQL => {
                 let pool = PgPoolOptions::new()
+                    .acquire_timeout(timeout_duration)
                     .max_connections(5)
                     .connect(&connection_string)
                     .await
@@ -66,9 +70,11 @@ impl DatabaseManager {
             },
         };
 
-        // Store the connection
-        let mut connections = self.connections.lock().await;
-        connections.push((connection.uuid.clone(), pool));
+        if !is_temp {
+            // Store the connection
+            let mut connections = self.connections.lock().await;
+            connections.push((connection.uuid.clone(), pool));
+        }
 
         Ok(())
     }
