@@ -1,11 +1,12 @@
-use sqlx::{mysql::MySqlPoolOptions, postgres::PgPoolOptions, MySqlPool, PgPool, Row};
+use crate::config::{DbConnection, DbType};
+use crate::security::SecureStorage;
+use sqlx::Column;
+use sqlx::ColumnIndex;
+use sqlx::{mysql::MySqlPoolOptions, postgres::PgPoolOptions, Decode, MySqlPool, PgPool, Row, Type};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Mutex;
-use sqlx::Column;
 use uuid::Uuid;
-use crate::config::{DbConnection, DbType};
-use crate::security::SecureStorage;
 
 pub enum DbPool {
     MySQL(MySqlPool),
@@ -231,18 +232,7 @@ impl DatabaseManager {
                 // Extract row data
                 let result_rows = rows
                     .iter()
-                    .map(|row| {
-                        (0..row.columns().len())
-                            .map(|i| {
-                                row.try_get::<String, _>(i)
-                                    .unwrap_or_else(|_| {
-                                        row.try_get::<Option<String>, _>(i)
-                                            .map(|val| val.unwrap_or_else(|| "NULL".to_string()))
-                                            .unwrap_or_else(|_| "<binary>".to_string())
-                                    })
-                            })
-                            .collect()
-                    })
+                    .map(process_row)
                     .collect();
 
                 Ok(QueryResult {
@@ -273,18 +263,7 @@ impl DatabaseManager {
                 // Extract row data
                 let result_rows = rows
                     .iter()
-                    .map(|row| {
-                        (0..row.columns().len())
-                            .map(|i| {
-                                row.try_get::<String, _>(i)
-                                    .unwrap_or_else(|_| {
-                                        row.try_get::<Option<String>, _>(i)
-                                            .map(|val| val.unwrap_or_else(|| "NULL".to_string()))
-                                            .unwrap_or_else(|_| "<binary>".to_string())
-                                    })
-                            })
-                            .collect()
-                    })
+                    .map(process_row)
                     .collect();
 
                 Ok(QueryResult {
@@ -293,5 +272,22 @@ impl DatabaseManager {
                 })
             }
         }
+
     }
+}
+
+fn process_row<R: Row>(row: &R) -> Vec<String> where
+    R: Row,
+    for<'r> String: Decode<'r, R::Database> + Type<R::Database>,
+    for<'r> Option<String>: Decode<'r, R::Database> + Type<R::Database>, usize: ColumnIndex<R>{
+    (0..row.columns().len())
+        .map(|i| {
+            row.try_get::<String, _>(i)
+                .unwrap_or_else(|_| {
+                    row.try_get::<Option<String>, _>(i)
+                        .map(|val| val.unwrap_or_else(|| "NULL".to_string()))
+                        .unwrap_or_else(|_| "<binary>".to_string())
+                })
+        })
+        .collect()
 }
