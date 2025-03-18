@@ -72,3 +72,27 @@ impl fmt::Display for SecurityError {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use uuid::Uuid;
+    use crate::security::SecureStorage;
+
+    #[test]
+    fn db_password() {
+        let pass = "password";
+        let uuid = Uuid::new_v4();
+        let res = SecureStorage::store_db_password(&uuid.to_string(), pass);
+
+        assert!(res.is_ok());
+
+        let res = SecureStorage::get_db_password(&uuid.to_string());
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap(), pass);
+
+        let res = SecureStorage::remove_db_password(&uuid.to_string());
+        assert!(res.is_ok());
+    }
+
+
+}
