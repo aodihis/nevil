@@ -1,5 +1,4 @@
 use crate::config::{AppConfig, DbConnection};
-use crate::db::{DatabaseManager, QueryResult};
 use crate::llm::llm::LLMClient;
 use crate::security::SecureStorage;
 use crate::ui::connection::Connection;
@@ -9,6 +8,7 @@ use eframe::egui;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 use uuid::Uuid;
+use crate::db::manager::{DatabaseManager, QueryResult};
 
 pub enum AppMode {
     Home,
@@ -194,7 +194,7 @@ impl AppState {
     //         return;
     //     }
     //
-    //     // Add user message to chat
+    //     // Add user message to db
     //     let message = self.current_message.clone();
     //     self.chat_messages.push(ChatMessage {
     //         sender: MessageSender::User,

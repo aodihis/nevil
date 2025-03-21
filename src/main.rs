@@ -1,11 +1,11 @@
 use egui::{Vec2, ViewportBuilder};
 
 mod app;
-mod db;
 mod llm;
 mod ui;
 mod config;
 mod security;
+mod db;
 
 fn main() -> eframe::Result<()> {
 
