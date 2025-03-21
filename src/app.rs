@@ -8,7 +8,7 @@ use eframe::egui;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 use uuid::Uuid;
-use crate::db::manager::{DatabaseManager, QueryResult};
+use crate::db_element::db::{DatabaseManager, QueryResult};
 
 pub enum AppMode {
     Home,
@@ -19,7 +19,7 @@ pub enum AppMode {
 
 pub struct AppState {
     pub config: AppConfig,
-    pub settings: Settings,
+
     pub mode: AppMode,
     pub db_manager: Arc<DatabaseManager>,
     pub llm_client: Option<LLMClient>,
@@ -27,10 +27,12 @@ pub struct AppState {
     pub chat_messages: Vec<ChatMessage>,
     pub current_message: String,
     pub query_result: Option<QueryResult>,
-    pub connection: Connection,
-    pub error_info: Option<String>,
-    pub success_info: Option<String>,
+
     pub runtime: Runtime,
+
+    // UI related struct
+    pub settings: Settings,
+    pub connection: Connection,
 }
 
 pub struct ChatMessage {
@@ -95,8 +97,6 @@ impl DBQueryApp {
                 current_message: String::new(),
                 query_result: None,
                 connection: Connection::new(),
-                error_info: None,
-                success_info: None,
                 runtime,
             },
         }
@@ -104,32 +104,6 @@ impl DBQueryApp {
 }
 
 impl AppState {
-    pub fn test_connection(&mut self, connection_name: String) {
-        let db_manager_clone = self.db_manager.clone();
-        let connections = self.config.connections.clone();
-
-        // Find the connection config
-        let connection = match connections.iter().find(|c| c.name == connection_name) {
-            Some(conn) => conn.clone(),
-            None => {
-                self.error_info = Some(format!("Connection '{}' not found", connection_name));
-                return;
-            }
-        };
-
-        // Test the connection asynchronously
-        self.runtime.spawn(async move {
-            if let Err(err) = db_manager_clone.connect(&connection, None, true).await {
-                // Handle error in UI thread
-                // This would require a channel or another mechanism to communicate back to the UI thread
-                // For simplicity, we'll just print the error
-                eprintln!("Connection test failed: {}", err);
-            } else {
-                eprintln!("Connection test successful");
-            }
-        });
-    }
-
     pub fn save_connection(&mut self) -> Result<(), String> {
         let connection = self.connection.clone();
         let password = connection.password;
@@ -194,7 +168,7 @@ impl AppState {
     //         return;
     //     }
     //
-    //     // Add user message to db
+    //     // Add user message to db_element
     //     let message = self.current_message.clone();
     //     self.chat_messages.push(ChatMessage {
     //         sender: MessageSender::User,

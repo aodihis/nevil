@@ -5,7 +5,7 @@ mod llm;
 mod ui;
 mod config;
 mod security;
-mod db;
+mod db_element;
 
 fn main() -> eframe::Result<()> {
 

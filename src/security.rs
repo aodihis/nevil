@@ -9,7 +9,7 @@ enum Service {
 impl Service {
     fn as_str(&self) -> &'static str {
         match *self {
-            Service::DbAssistant => "nevil::db",
+            Service::DbAssistant => "nevil::db_element",
             Service::LlmAPI => "nevil::llm_api",
         }
     }
