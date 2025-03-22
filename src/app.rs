@@ -39,6 +39,7 @@ pub struct ChatMessage {
     pub sender: MessageSender,
     pub content: String,
     pub is_sql: bool,
+
 }
 
 pub enum MessageSender {

@@ -1,18 +1,23 @@
+use bincode::Encode;
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 use uuid::Uuid;
 
-#[derive(Serialize)]
+#[derive(Serialize, Encode)]
 #[serde(rename_all = "lowercase")]
 pub enum Sender {
     System,
     User
 }
+
+#[derive(Encode)]
 pub struct Message {
+    #[bincode(with_serde)]
     pub uuid: Uuid,
     pub sender: Sender,
     pub content: String,
     pub is_sql: bool,
+    #[bincode(with_serde)]
     pub timestamp: DateTime<Utc>,
 }
 
@@ -25,26 +30,5 @@ impl Message {
             is_sql,
             timestamp: Utc::now(),
         }
-    }
-}
-
-pub struct Chat {
-    pub uuid: Uuid,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
-}
-
-impl Chat {
-    pub fn new(uuid: Uuid) -> Self {
-        let now = Utc::now();
-        Self {
-            uuid,
-            created_at: now,
-            updated_at: now,
-        }
-    }
-
-    pub fn update_timestamp(&mut self) {
-        self.updated_at = Utc::now();
     }
 }
