@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use crate::db_element::chat::Message;
 use bincode::config;
 use sled::Db;
@@ -8,7 +9,7 @@ pub struct ChatStorage {
 }
 
 impl ChatStorage {
-    pub fn new(db_path: &str) -> Result<Self, String> {
+    pub fn new(db_path: PathBuf) -> Result<Self, String> {
         let db = sled::open(db_path).expect("Unable to open sled database");
 
         Ok(Self {

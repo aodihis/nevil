@@ -83,3 +83,10 @@ fn get_config_path() -> PathBuf {
     path.push("config.toml");
     path
 }
+
+pub fn get_chat_db_path() -> PathBuf {
+    let mut path = dirs::config_dir().unwrap_or_else(|| PathBuf::from("./"));
+    path.push("neVil");
+    path.push("db");
+    path
+}

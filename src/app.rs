@@ -1,4 +1,4 @@
-use crate::config::{AppConfig, DbConnection};
+use crate::config::{get_chat_db_path, AppConfig, DbConnection};
 use crate::db_element::chat_storage::ChatStorage;
 use crate::db_element::db::{DatabaseManager, QueryResult};
 use crate::llm::llm::{LLMClient};
@@ -78,7 +78,7 @@ impl DBQueryApp {
             Ok(key) => {key}
             Err(_) => {"".to_string()}
         };
-        let chat_path = "chat_history";
+        let chat_path = get_chat_db_path();
         Self {
             state: AppState {
                 config,
