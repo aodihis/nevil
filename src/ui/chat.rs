@@ -1,18 +1,18 @@
-use chrono::Utc;
 use crate::app::AppState;
 use crate::db_element::chat::{Message, Sender};
-use egui::{Align, Color32, Context, Frame, RichText, ScrollArea, TextEdit};
+use chrono::Utc;
+use egui::{Align, Color32, Context, Frame, ScrollArea, TextEdit};
 use uuid::Uuid;
 
 pub struct Conversation {
     pub id: Option<Uuid>,
-    pub message: Vec<Message>,
+    pub messages: Vec<Message>,
     message_input: String,
 }
 
 impl Conversation {
     pub fn new(uuid: Option<Uuid>) -> Self {
-        Self { id: uuid, message: Vec::new(), message_input: "".to_string() }
+        Self { id: uuid, messages: Vec::new(), message_input: "".to_string() }
     }
 }
 pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
@@ -27,7 +27,7 @@ pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
             .stick_to_bottom(true)
             .max_height(chat_height)
             .show(ui, |ui| {
-                for msg in &app_state.conversation.message {
+                for msg in &app_state.conversation.messages {
                     let (align, bubble_color) = match msg.sender {
                         Sender::User => (egui::Layout::right_to_left(Align::RIGHT), Color32::from_rgb(0, 150, 255)),
                         Sender::System => (egui::Layout::left_to_right(Align::RIGHT), Color32::from_rgb(230, 230, 230)),
@@ -79,10 +79,10 @@ pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
                 if !app_state.conversation.message_input.trim().is_empty() {
                     let uuid = app_state.conversation.id.unwrap();
                     if let Ok(msg) = app_state.send_message(&uuid, app_state.conversation.message_input.clone()) {
-                        app_state.conversation.message.push(msg);
+                        app_state.conversation.messages.push(msg);
                         app_state.conversation.message_input.clear();
 
-                        app_state.conversation.message.push(Message {
+                        app_state.conversation.messages.push(Message {
                             uuid: Uuid::new_v4(),
                             sender: Sender::System,
                             content: "System Message".to_string(),

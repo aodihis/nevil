@@ -1,16 +1,16 @@
-use bincode::Encode;
+use bincode::{Decode, Encode};
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 use uuid::Uuid;
 
-#[derive(Serialize, Encode)]
+#[derive(Serialize, Encode, Decode)]
 #[serde(rename_all = "lowercase")]
 pub enum Sender {
     System,
     User
 }
 
-#[derive(Encode)]
+#[derive(Encode, Decode)]
 pub struct Message {
     #[bincode(with_serde)]
     pub uuid: Uuid,
@@ -26,7 +26,7 @@ impl Message {
         Self {
             uuid: Uuid::new_v4(),
             sender,
-            content,
+            content: content.trim().parse().unwrap(),
             is_sql,
             timestamp: Utc::now(),
         }

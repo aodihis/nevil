@@ -27,4 +27,17 @@ impl ChatStorage {
         tree.insert(&key.as_bytes(), encode).expect("Failed to save message");
         Ok(())
     }
+
+    pub fn get_messages(&self, db_uuid: &Uuid) -> Result<Vec<Message>, String> {
+        let tree = self.db.open_tree("messages").expect("Unable to open messages");
+        let prefix = format!("{}:", db_uuid);
+        let config = config::standard();
+        let mut messages = Vec::new();
+        for entry in tree.scan_prefix(prefix.as_bytes()) {
+            let (_, bytes) = entry.ok().expect("Unable to read messages");
+            let (message, _): (Message, usize) = bincode::decode_from_slice(&bytes[..], config).unwrap();
+            messages.push(message);
+        }
+        Ok(messages)
+    }
 }

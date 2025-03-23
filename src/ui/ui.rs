@@ -1,11 +1,11 @@
-use egui::{Align, Context, Layout, RichText, ScrollArea, TextEdit};
+use egui::Context;
 
-use crate::app::{AppMode, AppState, MessageSender};
+use crate::app::{AppMode, AppState};
 use crate::ui::chat::render_chat;
 use crate::ui::connection::connection_ui;
 use crate::ui::home::render_home;
 use crate::ui::left_panel::left_panel_ui;
-use crate::ui::setting::{render_settings};
+use crate::ui::setting::render_settings;
 
 pub fn render_ui(ctx: &Context, app_state: &mut AppState) {
     left_panel_ui(ctx, app_state);

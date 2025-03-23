@@ -1,18 +1,17 @@
 use crate::config::{get_chat_db_path, AppConfig, DbConnection};
+use crate::db_element::chat::{Message, Sender};
 use crate::db_element::chat_storage::ChatStorage;
 use crate::db_element::db::{DatabaseManager, QueryResult};
-use crate::llm::llm::{LLMClient};
+use crate::llm::llm::LLMClient;
 use crate::security::SecureStorage;
+use crate::ui::chat::Conversation;
 use crate::ui::connection::Connection;
 use crate::ui::setting::Settings;
 use crate::ui::ui::render_ui;
 use eframe::egui;
 use std::sync::Arc;
-use chrono::Utc;
 use tokio::runtime::Runtime;
 use uuid::Uuid;
-use crate::db_element::chat::{Message, Sender};
-use crate::ui::chat::Conversation;
 
 pub enum AppMode {
     Home,
@@ -38,12 +37,6 @@ pub struct AppState {
     pub settings: Settings,
     pub connection: Connection,
     pub conversation: Conversation
-}
-
-pub enum MessageSender {
-    User,
-    Assistant,
-    System,
 }
 
 pub struct DBQueryApp {
@@ -166,13 +159,7 @@ impl AppState {
 
     pub fn send_message(&mut self, element_uuid: &Uuid, msg: String) -> Result<Message, String> {
 
-        let message = Message{
-            uuid: Uuid::new_v4(),
-            sender: Sender::User,
-            content: msg.trim().parse().unwrap(),
-            is_sql: false,
-            timestamp: Utc::now(),
-        };
+        let message = Message::new(Sender::User, msg, false);
         
         self.chat_storage.add_message(element_uuid, &message).expect("Failed to add message");
         Ok(message)

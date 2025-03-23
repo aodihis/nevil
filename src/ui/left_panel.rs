@@ -32,6 +32,7 @@ pub fn connection_list(ui: &mut egui::Ui, app_state: &mut AppState) {
         ui.horizontal(|ui| {
             if ui.add(egui::Button::new(con.name.clone()).frame(false)).clicked() {
                 app_state.conversation = Conversation::new(Some(con.uuid.clone()));
+                app_state.conversation.messages = app_state.chat_storage.get_messages(&con.uuid).unwrap_or_else(|_| vec![]);
                 app_state.mode = AppMode::Chat;
             }
 
