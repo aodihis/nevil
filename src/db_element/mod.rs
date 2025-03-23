@@ -1,3 +1,3 @@
 pub mod db;
-mod chat;
-mod chat_storage;
+pub mod chat;
+pub mod chat_storage;

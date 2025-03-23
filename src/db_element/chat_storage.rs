@@ -16,7 +16,7 @@ impl ChatStorage {
         })
     }
 
-    pub fn add_message(&self, db_uuid: Uuid, message: &Message) -> Result<(), String> {
+    pub fn add_message(&self, db_uuid: &Uuid, message: &Message) -> Result<(), String> {
         let tree = self.db.open_tree("messages").expect("Unable to open messages");
         let key = format!("{}:{:?}:{}", db_uuid, message.timestamp.timestamp_micros(), message.uuid);
 

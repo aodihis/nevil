@@ -1,14 +1,18 @@
 use crate::config::{AppConfig, DbConnection};
-use crate::llm::llm::LLMClient;
+use crate::db_element::chat_storage::ChatStorage;
+use crate::db_element::db::{DatabaseManager, QueryResult};
+use crate::llm::llm::{LLMClient};
 use crate::security::SecureStorage;
 use crate::ui::connection::Connection;
 use crate::ui::setting::Settings;
 use crate::ui::ui::render_ui;
 use eframe::egui;
 use std::sync::Arc;
+use chrono::Utc;
 use tokio::runtime::Runtime;
 use uuid::Uuid;
-use crate::db_element::db::{DatabaseManager, QueryResult};
+use crate::db_element::chat::{Message, Sender};
+use crate::ui::chat::Conversation;
 
 pub enum AppMode {
     Home,
@@ -22,9 +26,9 @@ pub struct AppState {
 
     pub mode: AppMode,
     pub db_manager: Arc<DatabaseManager>,
+    pub chat_storage: Arc<ChatStorage>,
     pub llm_client: Option<LLMClient>,
     pub active_connection: Option<String>,
-    pub chat_messages: Vec<ChatMessage>,
     pub current_message: String,
     pub query_result: Option<QueryResult>,
 
@@ -33,13 +37,7 @@ pub struct AppState {
     // UI related struct
     pub settings: Settings,
     pub connection: Connection,
-}
-
-pub struct ChatMessage {
-    pub sender: MessageSender,
-    pub content: String,
-    pub is_sql: bool,
-
+    pub conversation: Conversation
 }
 
 pub enum MessageSender {
@@ -80,6 +78,7 @@ impl DBQueryApp {
             Ok(key) => {key}
             Err(_) => {"".to_string()}
         };
+        let chat_path = "chat_history";
         Self {
             state: AppState {
                 config,
@@ -92,13 +91,14 @@ impl DBQueryApp {
                 },
                 mode: AppMode::Home,
                 db_manager,
+                chat_storage: Arc::new(ChatStorage::new(chat_path).unwrap()),
                 llm_client,
                 active_connection: None,
-                chat_messages: Vec::new(),
                 current_message: String::new(),
                 query_result: None,
                 connection: Connection::new(),
                 runtime,
+                conversation: Conversation::new(None),
             },
         }
     }
@@ -162,6 +162,20 @@ impl AppState {
             self.config.save();
         }
         Ok(())
+    }
+
+    pub fn send_message(&mut self, element_uuid: &Uuid, msg: String) -> Result<Message, String> {
+
+        let message = Message{
+            uuid: Uuid::new_v4(),
+            sender: Sender::User,
+            content: msg.trim().parse().unwrap(),
+            is_sql: false,
+            timestamp: Utc::now(),
+        };
+        
+        self.chat_storage.add_message(element_uuid, &message).expect("Failed to add message");
+        Ok(message)
     }
 
     // pub fn send_message(&mut self) {
