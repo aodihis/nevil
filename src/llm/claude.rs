@@ -1,6 +1,7 @@
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use crate::llm::llm::ContentResponse;
 
 #[derive(Serialize, Deserialize)]
 pub struct ClaudeRequest {
@@ -81,4 +82,13 @@ pub async fn llm_request(api_key: String, client: &Client, model: String, user_q
 
     Ok(response_json)
 
+}
+
+pub fn parse_content(response_json: Value) -> Result<ContentResponse, String> {
+    if let Some(content) = response_json["content"][0]["text"].as_str() {
+        let parsed: ContentResponse = serde_json::from_str(content).map_err(|e| e.to_string())?;
+        Ok(parsed)
+    } else {
+        Err("message does not contain content".to_string())
+    }
 }

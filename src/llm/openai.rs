@@ -1,6 +1,7 @@
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use crate::llm::llm::ContentResponse;
 
 pub enum Model {
     Gpt4Turbo,
@@ -59,7 +60,17 @@ struct OpenaiRequest {
 pub async fn llm_request(api_key: String, client: &Client, model: String, user_query: &str, schema_info: &str) -> Result<Value, String> {
     let openai_prompt = format!(
         "You are a helpful database assistant. Convert natural language queries to SQL.
-            Do not include any explanations, just return the SQL query.
+            Do not include any explanations. Always return a JSON object in this format:
+
+            {{
+                \"type\": \"query\",
+                \"sql\": \"SELECT * FROM users;\"
+            }}
+            OR
+            {{
+                \"type\": \"clarification\",
+                \"message\": \"I need more details about the table you want to query.\"
+            }}
             Use the following database schema information:
             {}
 
@@ -101,10 +112,15 @@ pub async fn llm_request(api_key: String, client: &Client, model: String, user_q
 
 }
 
-pub fn get_content(response_json: Value) -> String {
-    if let Some(content) = response_json["message"]["content"].as_str() {
-        content.trim().to_string()
+pub fn parse_content(response_json: Value) -> Result<ContentResponse, String> {
+    if let Some(content) = response_json["choices"]
+        .get(0)
+        .and_then(|choice| choice["message"]["content"].as_str())
+    {
+        let parsed: ContentResponse = serde_json::from_str(content).map_err(|e| e.to_string())?;
+        println!("{:?}", parsed);
+        Ok(parsed)
     } else {
-        "".to_string()
+        Err("message does not contain content".to_string())
     }
 }

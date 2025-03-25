@@ -24,13 +24,6 @@ pub struct LLMClient {
     client: Client,
     config: LLMConfig,
 }
-
-#[derive(Serialize, Deserialize)]
-pub struct Message {
-    role: String,
-    content: String,
-}
-
 impl LLMClient {
     pub fn new(config: LLMConfig) -> Self {
         Self {
@@ -39,7 +32,7 @@ impl LLMClient {
         }
     }
 
-    pub async fn generate_sql(&self, user_query: &str, schema_info: &str) -> Result<String, String> {
+    pub async fn generate_sql(&self, user_query: &str, schema_info: &str) -> Result<ContentResponse, String> {
         // Retrieve the API key securely
         let api_key = match SecureStorage::get_api_key() {
             Ok(key) => key,
@@ -66,12 +59,27 @@ impl LLMClient {
 
         match provider {
             Provider::Claude => {
-               Ok( "".to_string())
+                claude::parse_content(response_json)
             },
             Provider::OpenAI => {
-                Ok(openai::get_content(response_json))
+               openai::parse_content(response_json)
             }
         }
 
     }
 }
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "lowercase")]
+pub enum ResponseType {
+    Query,
+    Clarification,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ContentResponse {
+    r#type: ResponseType,
+    sql: Option<String>,         // Only present when type is "query"
+    message: Option<String>,     // Only present when type is "clarification"
+}
+
