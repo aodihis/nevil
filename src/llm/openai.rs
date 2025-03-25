@@ -1,3 +1,4 @@
+use log::debug;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -44,13 +45,13 @@ impl Model {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Message {
     role: String,
     content: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 struct OpenaiRequest {
     pub model: String,
     pub messages: Vec<Message>,
@@ -97,6 +98,7 @@ pub async fn llm_request(api_key: String, client: &Client, model: String, user_q
         temperature: 0.0, // Use low temperature for deterministic results
     };
 
+    debug!("Sending Openai request: {:?}", request);
     let response = client
         .post("https://api.openai.com/v1/chat/completions")
         .header("Authorization", format!("Bearer {}", api_key))
@@ -107,7 +109,7 @@ pub async fn llm_request(api_key: String, client: &Client, model: String, user_q
         .map_err(|e| e.to_string())?;
 
     let response_json: Value = response.json().await.map_err(|e| e.to_string())?;
-    println!("{}", response_json);
+    debug!("OpenAI response data: {}", response_json);
     Ok(response_json)
 
 }

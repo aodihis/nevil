@@ -2,8 +2,8 @@ use crate::app::{AppMode, AppState};
 use crate::db_element::chat::{Message, Sender};
 use crate::db_element::db::DatabaseManager;
 use crate::llm::llm::{LLMClient, ResponseType};
-use chrono::Utc;
 use egui::{Align, Color32, Context, Frame, ScrollArea, TextEdit};
+use log::debug;
 use uuid::Uuid;
 
 pub struct Conversation {
@@ -83,7 +83,6 @@ pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
 
             // Send button
             if send_clicked || enter_pressed {
-                println!("clic");
                 if !app_state.conversation.message_input.trim().is_empty() {
                     let uuid = uuid.clone();
                     let (tx, rx) = tokio::sync::mpsc::channel(1);
@@ -94,13 +93,8 @@ pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
                     app_state.conversation.message_input.clear();
                     let llm_client = llm_client.clone();
                     app_state.runtime.spawn(async move {
-                        println!("sending message");
                         let res = send_message(&llm_client, &db_manager, &uuid, message).await;
-                        println!("received message");
-                        let n = tx.send(res).await;
-                        if n.is_err() {
-                            println!("error sending message");
-                        }
+                       tx.send(res).await.ok();
                     });
 
                 }
@@ -109,17 +103,12 @@ pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
 
         if let Some(ref mut rx) = app_state.conversation.rx {
             if let Ok(recv) = rx.try_recv() {
-                println!("get messages");
                 if let Ok(res) = recv {
                     let (user_message, system_message) = res;
-                    println!("User: {}", user_message.content, );
-                    println!("System: {}", system_message.content, );
                     app_state.chat_storage.add_message(&uuid, &user_message).expect("Failed to add message");
                     app_state.chat_storage.add_message(&uuid, &system_message).expect("Failed to add message");
                     app_state.conversation.messages.push(user_message);
                     app_state.conversation.messages.push(system_message);
-                } else {
-                    println!("Error receiving message: {:?}", recv.err());
                 }
             }
         }
@@ -133,7 +122,16 @@ pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
 pub async fn send_message(llm_client:  &LLMClient, db_manager: &DatabaseManager, element_uuid: &Uuid, msg: String) -> Result<(Message, Message), String> {
     let message = Message::new(Sender::User, msg, false);
     let schema = db_manager.get_schema_info(element_uuid).await?;
-    let response = llm_client.generate_sql(&message.content, &schema).await.expect("Failed to communicate with LLM");
+    let response = match llm_client.generate_sql(&message.content, &schema).await {
+        Ok(res) => {
+            debug!("System response: {:?}", res);
+            res
+        }
+        Err(e) => {
+            debug!("Error generating SQL statement: {:?}", e);
+            return Err("Failed to communicate with LLM".to_string());
+        }
+    };
 
     let system_response = Message::new(Sender::System, response.message, response.r#type == ResponseType::Clarification);
 

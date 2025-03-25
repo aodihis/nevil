@@ -1,4 +1,5 @@
 use egui::{Vec2, ViewportBuilder};
+use log::info;
 
 mod app;
 mod llm;
@@ -15,6 +16,7 @@ fn main() -> eframe::Result<()> {
         ..Default::default()
     };
 
+    info!("Starting the application");
     eframe::run_native(
         "Database Query Assistant",
         native_options,

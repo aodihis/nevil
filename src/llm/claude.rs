@@ -1,9 +1,10 @@
+use log::debug;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use crate::llm::llm::ContentResponse;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ClaudeRequest {
     pub model: String,
     pub messages: Vec<Message>,
@@ -33,7 +34,7 @@ impl Model {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Message {
     role: String,
     content: String,
@@ -42,7 +43,17 @@ pub struct Message {
 pub async fn llm_request(api_key: String, client: &Client, model: String, user_query: &str, schema_info: &str) -> Result<Value, String> {
     let claude_prompt = format!(
         "You are a helpful database assistant. Convert natural language queries to SQL.
-        Do not include any explanations, just return the SQL query.
+        Do not include any explanations. Always return a JSON object in this format:
+
+            {{
+                \"type\": \"query\",
+                \"message\": \"SELECT * FROM users;\"
+            }}
+            OR
+            {{
+                \"type\": \"clarification\",
+                \"message\": \"I need more details about the table you want to query.\"
+            }}
         Use the following database schema information:
         {}
 
@@ -68,6 +79,8 @@ pub async fn llm_request(api_key: String, client: &Client, model: String, user_q
         temperature: 0.0, // Use low temperature for deterministic results
     };
 
+
+    debug!("Sending request to Claude: {:?}", request);
     let response = client
         .post("https://api.anthropic.com/v1/messages")
         .header("x-api-key", api_key)
@@ -79,7 +92,7 @@ pub async fn llm_request(api_key: String, client: &Client, model: String, user_q
         .map_err(|e| e.to_string())?;
 
     let response_json: Value = response.json().await.map_err(|e| e.to_string())?;
-
+    debug!("Claude response: {:?}", response_json);
     Ok(response_json)
 
 }

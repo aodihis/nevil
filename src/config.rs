@@ -46,8 +46,10 @@ impl AppConfig {
         let config_path = get_config_path();
         if config_path.exists() {
             let config_str = fs::read_to_string(config_path).unwrap_or_default();
+            log::info!("Loading config: {}", config_str);
             toml::from_str(&config_str).unwrap_or_else(|_| Self::default())
         } else {
+            log::info!("Creating new config using default config");
             let default = Self::default();
             default.save();
             default
@@ -56,11 +58,12 @@ impl AppConfig {
 
     pub fn save(&self) {
         let config_path = get_config_path();
-        println!("Saving config to: {}", config_path.display());
+        log::info!("Saving config to: {}", config_path.display());
         if let Some(parent) = config_path.parent() {
             fs::create_dir_all(parent).ok();
         }
         let config_str = toml::to_string(self).unwrap_or_default();
+        log::info!("Save configuration: {}", config_str);
         fs::write(config_path, config_str).ok();
     }
 }
@@ -81,6 +84,7 @@ fn get_config_path() -> PathBuf {
     let mut path = dirs::config_dir().unwrap_or_else(|| PathBuf::from("./"));
     path.push("neVil");
     path.push("config.toml");
+    log::info!("Config directory: {}", path.display());
     path
 }
 
@@ -88,5 +92,6 @@ pub fn get_chat_db_path() -> PathBuf {
     let mut path = dirs::config_dir().unwrap_or_else(|| PathBuf::from("./"));
     path.push("neVil");
     path.push("db");
+    log::info!("Db directory: {}", path.display());
     path
 }

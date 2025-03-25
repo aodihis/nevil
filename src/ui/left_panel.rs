@@ -1,17 +1,22 @@
 use crate::app::{AppMode, AppState};
-use crate::ui::connection::Connection;
-use egui::{Align, Context, Layout};
 use crate::security::SecureStorage;
 use crate::ui::chat::Conversation;
+use crate::ui::connection::Connection;
+use egui::{Align, Context, Layout};
+use log::info;
 
 pub fn left_panel_ui(ctx: &Context, app_state: &mut AppState) {
-    egui::SidePanel::left("left_panel").resizable(true).show(ctx, |ui| {
-        side_menu(ui, app_state);
-        connection_list(ui, app_state);
-    });
+    info!("Rendering left panel");
+    egui::SidePanel::left("left_panel")
+        .resizable(true)
+        .show(ctx, |ui| {
+            side_menu(ui, app_state);
+            connection_list(ui, app_state);
+        });
 }
 
 pub fn side_menu(ui: &mut egui::Ui, app_state: &mut AppState) {
+    info!("Rendering side menu");
     ui.horizontal(|ui| {
         ui.heading("neVil");
         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
@@ -28,11 +33,18 @@ pub fn side_menu(ui: &mut egui::Ui, app_state: &mut AppState) {
 }
 
 pub fn connection_list(ui: &mut egui::Ui, app_state: &mut AppState) {
+    info!("Rendering connections left panel");
     for con in &app_state.config.connections {
         ui.horizontal(|ui| {
-            if ui.add(egui::Button::new(con.name.clone()).frame(false)).clicked() {
+            if ui
+                .add(egui::Button::new(con.name.clone()).frame(false))
+                .clicked()
+            {
                 app_state.conversation = Conversation::new(Some(con.uuid.clone()));
-                app_state.conversation.messages = app_state.chat_storage.get_messages(&con.uuid).unwrap_or_else(|_| vec![]);
+                app_state.conversation.messages = app_state
+                    .chat_storage
+                    .get_messages(&con.uuid)
+                    .unwrap_or_else(|_| vec![]);
                 let db_config = con.clone();
                 let pass = if let Ok(pwd) = SecureStorage::get_db_password(&con.uuid.to_string()) {
                     pwd
@@ -40,11 +52,9 @@ pub fn connection_list(ui: &mut egui::Ui, app_state: &mut AppState) {
                     return;
                 };
                 let db_manager = app_state.db_manager.clone();
-                app_state.runtime.spawn(async move {
-                    db_manager
-                        .connect(&db_config, Some(pass), false)
-                        .await
-                });
+                app_state
+                    .runtime
+                    .spawn(async move { db_manager.connect(&db_config, Some(pass), false).await });
                 app_state.mode = AppMode::Chat;
             }
 

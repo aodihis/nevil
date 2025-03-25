@@ -3,6 +3,7 @@ use crate::llm::claude::Model as ClaudeModel;
 use crate::llm::llm::Provider;
 use crate::llm::openai::Model as OpenAiModel;
 use egui::{Context, TextEdit};
+use log::info;
 
 #[derive(Clone)]
 pub struct Settings {
@@ -15,6 +16,7 @@ pub struct Settings {
 
 
 pub fn render_settings(ctx: &Context, app_state: &mut AppState) {
+        info!("Rendering settings");
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("LLM API Settings");
             ui.add_space(10.0);

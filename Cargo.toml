@@ -23,3 +23,4 @@ uuid = { version = "1.15.1", features = ["serde", "v4"] }
 chrono = { version = "0.4", features = ["serde"] }
 sled = "0.34.7"
 bincode = { version = "2.0.1", features = ["serde"] }
+log = "0.4.27"

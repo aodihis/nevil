@@ -1,6 +1,7 @@
 use crate::app::{AppMode, AppState};
 use crate::config::{DbConnection, DbType};
 use egui::{Context, TextEdit, Window};
+use log::info;
 use uuid::Uuid;
 
 pub struct Connection {
@@ -62,6 +63,7 @@ impl Connection {
     }
 }
 pub fn connection_ui(ctx: &Context, app_state: &mut AppState) {
+    info!("Rending connection");
     egui::CentralPanel::default().show(ctx, |ui| {
         ui.heading(if !app_state.connection.is_new {
             "Edit Connection"
@@ -126,6 +128,7 @@ pub fn connection_ui(ctx: &Context, app_state: &mut AppState) {
                 }
             }
             if ui.button("Test Connection").clicked() {
+                info!("Testing Connection");
                 // Create a clone of connection for testing
                 let test_connection = DbConnection {
                     uuid: Uuid::new_v4(),

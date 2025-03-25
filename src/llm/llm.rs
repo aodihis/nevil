@@ -1,3 +1,4 @@
+use log::debug;
 use crate::config::LLMConfig;
 use crate::llm::{claude, openai};
 use crate::security::SecureStorage;
@@ -36,7 +37,10 @@ impl LLMClient {
         // Retrieve the API key securely
         let api_key = match SecureStorage::get_api_key() {
             Ok(key) => key,
-            Err(_) => return Err("API key not found".to_string()),
+            Err(_) => {
+                debug!("No API key found in storage");
+                return Err("API key not found".to_string())
+            },
         };
 
         let provider = self.config.provider.clone().expect("LLM configuration missing");
@@ -56,6 +60,8 @@ impl LLMClient {
                 return Err("Failed to generate LLM response".to_string());
             }
         };
+
+        debug!("response data: {:?}", response_json);
 
         match provider {
             Provider::Claude => {
