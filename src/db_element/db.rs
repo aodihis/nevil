@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::config::{DbConnection, DbType};
 use crate::security::SecureStorage;
 use sqlx::Column;
@@ -14,7 +15,7 @@ pub enum DbPool {
 }
 
 pub struct DatabaseManager {
-    connections: Arc<Mutex<Vec<(Uuid, DbPool)>>>,
+    connections: Arc<Mutex<HashMap<Uuid, DbPool>>>,
 }
 
 pub struct QueryResult {
@@ -25,7 +26,7 @@ pub struct QueryResult {
 impl DatabaseManager {
     pub fn new() -> Self {
         Self {
-            connections: Arc::new(Mutex::new(Vec::new())),
+            connections: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -74,7 +75,7 @@ impl DatabaseManager {
         if !is_temp {
             // Store the connection
             let mut connections = self.connections.lock().await;
-            connections.push((connection.uuid.clone(), pool));
+            connections.insert(connection.uuid.clone(), pool);
         }
 
         Ok(())
@@ -83,13 +84,9 @@ impl DatabaseManager {
     pub async fn get_schema_info(&self, connection_uuid: &Uuid) -> Result<String, String> {
         let connections = self.connections.lock().await;
 
-        // Find the connection
-        let connection = connections.iter()
-            .find(|(uuid, _)| uuid == connection_uuid)
-            .ok_or_else(|| "Connection not found".to_string())?;
-
+        let connection = connections.get(connection_uuid).ok_or_else(|| "Connection not found".to_string())?;
         // Query schema information based on database type
-        match &connection.1 {
+        match connection {
             DbPool::MySQL(pool) => {
                 // For MySQL, query information_schema for table and column information
                 let tables = sqlx::query(
@@ -201,14 +198,10 @@ impl DatabaseManager {
 
     pub async fn execute_query(&self, connection_uuid: &Uuid, query: &str) -> Result<QueryResult, String> {
         let connections = self.connections.lock().await;
-
         // Find the connection
-        let connection = connections.iter()
-            .find(|(uuid, _)| uuid == connection_uuid)
-            .ok_or_else(|| "Connection not found".to_string())?;
-
+        let connection = connections.get(connection_uuid).ok_or_else(|| "Connection not found".to_string())?;
         // Execute query based on database type
-        match &connection.1 {
+        match connection {
             DbPool::MySQL(pool) => {
                 let rows = sqlx::query(query)
                     .fetch_all(pool)

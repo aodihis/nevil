@@ -17,7 +17,7 @@ pub struct Connection {
     error_message: Option<String>,
     loading_message: Option<String>,
     confirm_delete: bool,
-    rx: Option<tokio::sync::mpsc::Receiver<Result<(), String>>>
+    rx: Option<tokio::sync::mpsc::Receiver<Result<(), String>>>,
 }
 
 impl Clone for Connection {
@@ -39,7 +39,6 @@ impl Clone for Connection {
             rx: None,
         }
     }
-
 }
 
 impl Connection {
@@ -64,7 +63,11 @@ impl Connection {
 }
 pub fn connection_ui(ctx: &Context, app_state: &mut AppState) {
     egui::CentralPanel::default().show(ctx, |ui| {
-        ui.heading(if !app_state.connection.is_new { "Edit Connection" } else { "New Connection" });
+        ui.heading(if !app_state.connection.is_new {
+            "Edit Connection"
+        } else {
+            "New Connection"
+        });
         ui.add_space(10.0);
         ui.horizontal(|ui| {
             ui.label("Connection Name:");
@@ -74,7 +77,11 @@ pub fn connection_ui(ctx: &Context, app_state: &mut AppState) {
         ui.horizontal(|ui| {
             ui.label("Database Type:");
             ui.radio_value(&mut app_state.connection.db_type, DbType::MySQL, "MySQL");
-            ui.radio_value(&mut app_state.connection.db_type, DbType::PostgreSQL, "PostgreSQL");
+            ui.radio_value(
+                &mut app_state.connection.db_type,
+                DbType::PostgreSQL,
+                "PostgreSQL",
+            );
         });
 
         ui.horizontal(|ui| {
@@ -141,13 +148,15 @@ pub fn connection_ui(ctx: &Context, app_state: &mut AppState) {
                 app_state.connection.rx = Some(rx);
                 // This would be better with a callback mechanism
                 app_state.runtime.spawn(async move {
-                    if let Err(err) = db_manager.connect(&test_connection, Some(password), true).await {
+                    if let Err(err) = db_manager
+                        .connect(&test_connection, Some(password), true)
+                        .await
+                    {
                         tx.send(Err(err)).await.ok();
                     } else {
                         tx.send(Ok(())).await.ok();
                     }
                 });
-
             }
 
             if ui.button("Save Connection").clicked() {
@@ -155,14 +164,18 @@ pub fn connection_ui(ctx: &Context, app_state: &mut AppState) {
                 app_state.connection.error_message = None;
                 app_state.connection.success_message = None;
                 if app_state.connection.name.trim().is_empty() {
-                    app_state.connection.error_message = Some("Connection name cannot be empty".to_string());
+                    app_state.connection.error_message =
+                        Some("Connection name cannot be empty".to_string());
                 } else if app_state.connection.database.trim().is_empty() {
-                    app_state.connection.error_message = Some("Database name cannot be empty".to_string());
+                    app_state.connection.error_message =
+                        Some("Database name cannot be empty".to_string());
                 } else {
                     if let Err(err) = app_state.save_connection() {
-                        app_state.connection.error_message = Some(format!("Failed to store password: {}", err));
+                        app_state.connection.error_message =
+                            Some(format!("Failed to store password: {}", err));
                     } else {
-                        app_state.connection.success_message = Some("Connection saved successfully!".to_string());
+                        app_state.connection.success_message =
+                            Some("Connection saved successfully!".to_string());
                         app_state.mode = AppMode::Connections;
                     }
                 }
@@ -187,21 +200,22 @@ pub fn connection_ui(ctx: &Context, app_state: &mut AppState) {
 
         if let Some(ref mut rx) = app_state.connection.rx {
             if let Ok(res) = rx.try_recv() {
-            match res {
-                Ok(_) => {
-                    app_state.connection.error_message = None;
-                    app_state.connection.loading_message = None;
-                    app_state.connection.success_message = Some("Connection test successful".to_string());
-                },
-                Err(error_msg) => {
-                    let res = format!("Connection test failed: {}", error_msg);
+                match res {
+                    Ok(_) => {
+                        app_state.connection.error_message = None;
+                        app_state.connection.loading_message = None;
+                        app_state.connection.success_message =
+                            Some("Connection test successful".to_string());
+                    }
+                    Err(error_msg) => {
+                        let res = format!("Connection test failed: {}", error_msg);
 
-                    app_state.connection.loading_message = None;
-                    app_state.connection.success_message = None;
-                    app_state.connection.error_message = Some(res);
+                        app_state.connection.loading_message = None;
+                        app_state.connection.success_message = None;
+                        app_state.connection.error_message = Some(res);
+                    }
                 }
             }
-        }
         }
 
         if app_state.connection.confirm_delete {
@@ -214,10 +228,13 @@ pub fn connection_ui(ctx: &Context, app_state: &mut AppState) {
                     ui.horizontal(|ui| {
                         if ui.button("Yes").clicked() {
                             app_state.connection.confirm_delete = false;
-                            if let Err(err) = app_state.remove_connection(app_state.connection.uuid.clone()) {
+                            if let Err(err) =
+                                app_state.remove_connection(app_state.connection.uuid.clone())
+                            {
                                 app_state.connection.loading_message = None;
                                 app_state.connection.success_message = None;
-                                app_state.connection.error_message = Some(format!("Failed to remove connection: {}", err));
+                                app_state.connection.error_message =
+                                    Some(format!("Failed to remove connection: {}", err));
                             } else {
                                 app_state.mode = AppMode::Home;
                             }
@@ -229,6 +246,5 @@ pub fn connection_ui(ctx: &Context, app_state: &mut AppState) {
                     });
                 });
         }
-
     });
 }

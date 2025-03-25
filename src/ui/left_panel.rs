@@ -33,6 +33,18 @@ pub fn connection_list(ui: &mut egui::Ui, app_state: &mut AppState) {
             if ui.add(egui::Button::new(con.name.clone()).frame(false)).clicked() {
                 app_state.conversation = Conversation::new(Some(con.uuid.clone()));
                 app_state.conversation.messages = app_state.chat_storage.get_messages(&con.uuid).unwrap_or_else(|_| vec![]);
+                let db_config = con.clone();
+                let pass = if let Ok(pwd) = SecureStorage::get_db_password(&con.uuid.to_string()) {
+                    pwd
+                } else {
+                    return;
+                };
+                let db_manager = app_state.db_manager.clone();
+                app_state.runtime.spawn(async move {
+                    db_manager
+                        .connect(&db_config, Some(pass), false)
+                        .await
+                });
                 app_state.mode = AppMode::Chat;
             }
 

@@ -87,7 +87,7 @@ pub async fn llm_request(api_key: String, client: &Client, model: String, user_q
     };
 
     let response = client
-        .post("https://api.anthropic.com/v1/messages")
+        .post("https://api.openai.com/v1/chat/completions")
         .header("Authorization", format!("Bearer {}", api_key))
         .header("content-type", "application/json")
         .json(&request)
@@ -96,7 +96,15 @@ pub async fn llm_request(api_key: String, client: &Client, model: String, user_q
         .map_err(|e| e.to_string())?;
 
     let response_json: Value = response.json().await.map_err(|e| e.to_string())?;
-
+    println!("{}", response_json);
     Ok(response_json)
 
+}
+
+pub fn get_content(response_json: Value) -> String {
+    if let Some(content) = response_json["message"]["content"].as_str() {
+        content.trim().to_string()
+    } else {
+        "".to_string()
+    }
 }

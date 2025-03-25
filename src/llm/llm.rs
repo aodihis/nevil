@@ -64,11 +64,14 @@ impl LLMClient {
             }
         };
 
-        // Extract the SQL query
-        if let Some(content) = response_json["content"][0]["text"].as_str() {
-            Ok(content.trim().to_string())
-        } else {
-            Err("Failed to parse LLM response".to_string())
+        match provider {
+            Provider::Claude => {
+               Ok( "".to_string())
+            },
+            Provider::OpenAI => {
+                Ok(openai::get_content(response_json))
+            }
         }
+
     }
 }

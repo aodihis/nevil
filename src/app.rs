@@ -1,5 +1,4 @@
 use crate::config::{get_chat_db_path, AppConfig, DbConnection};
-use crate::db_element::chat::{Message, Sender};
 use crate::db_element::chat_storage::ChatStorage;
 use crate::db_element::db::{DatabaseManager, QueryResult};
 use crate::llm::llm::LLMClient;
@@ -155,14 +154,6 @@ impl AppState {
             self.config.save();
         }
         Ok(())
-    }
-
-    pub fn send_message(&mut self, element_uuid: &Uuid, msg: String) -> Result<Message, String> {
-
-        let message = Message::new(Sender::User, msg, false);
-        
-        self.chat_storage.add_message(element_uuid, &message).expect("Failed to add message");
-        Ok(message)
     }
 
     // pub fn send_message(&mut self) {
