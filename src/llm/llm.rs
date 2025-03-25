@@ -1,9 +1,8 @@
+use crate::config::LLMConfig;
+use crate::llm::{claude, openai};
+use crate::security::SecureStorage;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use crate::llm::claude;
-use crate::config::LLMConfig;
-use crate::security::SecureStorage;
 
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub enum Provider {
@@ -54,7 +53,7 @@ impl LLMClient {
                 claude::llm_request(api_key, &self.client, self.config.model.clone(), user_query, schema_info).await
             },
             Provider::OpenAI => {
-                return Ok("".to_string());
+                openai::llm_request(api_key, &self.client, self.config.model.clone(), user_query, schema_info).await
             }
         };
 
