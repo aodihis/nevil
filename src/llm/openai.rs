@@ -1,4 +1,6 @@
-
+use reqwest::Client;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 pub enum Model {
     Gpt4Turbo,
@@ -39,4 +41,62 @@ impl Model {
     pub fn variants_name() -> Vec<&'static str> {
         Self::variants().iter().map(|model| model.name()).collect()
     }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Message {
+    role: String,
+    content: String,
+}
+
+#[derive(Serialize, Deserialize)]
+struct OpenaiRequest {
+    pub model: String,
+    pub messages: Vec<Message>,
+    pub max_tokens: u32,
+    pub temperature: f32,
+}
+pub async fn llm_request(api_key: String, client: &Client, model: String, user_query: &str, schema_info: &str) -> Result<Value, String> {
+    let openai_prompt = format!(
+        "You are a helpful database assistant. Convert natural language queries to SQL.
+            Do not include any explanations, just return the SQL query.
+            Use the following database schema information:
+            {}
+
+            Only write SQL that selects data, do not modify the database (no INSERT, UPDATE, DELETE, etc.).
+            Return only the SQL query without backticks or any additional text.",
+        schema_info
+    );
+
+    let messages = vec![
+        Message {
+            role: "system".to_string(),
+            content: openai_prompt,
+        },
+        Message {
+            role: "user".to_string(),
+            content: user_query.to_string(),
+        },
+    ];
+
+    let request = OpenaiRequest {
+        model,
+        messages,
+        max_tokens: 1000,
+        temperature: 0.0, // Use low temperature for deterministic results
+    };
+
+    let response = client
+        .post("https://api.anthropic.com/v1/messages")
+        .header("Authorization", format!("Bearer {}", api_key))
+        .header("content-type", "application/json")
+        .json(&request)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let response_json: Value = response.json().await.map_err(|e| e.to_string())?;
+
+    Ok(response_json)
+
 }
