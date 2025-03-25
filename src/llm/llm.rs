@@ -69,7 +69,7 @@ impl LLMClient {
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum ResponseType {
     Query,
@@ -78,8 +78,7 @@ pub enum ResponseType {
 
 #[derive(Deserialize, Debug)]
 pub struct ContentResponse {
-    r#type: ResponseType,
-    sql: Option<String>,         // Only present when type is "query"
-    message: Option<String>,     // Only present when type is "clarification"
+    pub r#type: ResponseType,
+    pub message: String,
 }
 

@@ -1,7 +1,7 @@
 use crate::app::{AppMode, AppState};
 use crate::db_element::chat::{Message, Sender};
 use crate::db_element::db::DatabaseManager;
-use crate::llm::llm::LLMClient;
+use crate::llm::llm::{LLMClient, ResponseType};
 use chrono::Utc;
 use egui::{Align, Color32, Context, Frame, ScrollArea, TextEdit};
 use uuid::Uuid;
@@ -10,7 +10,7 @@ pub struct Conversation {
     pub id: Option<Uuid>,
     pub messages: Vec<Message>,
     message_input: String,
-    rx: Option<tokio::sync::mpsc::Receiver<Result<Message, String>>>
+    rx: Option<tokio::sync::mpsc::Receiver<Result<(Message,Message), String>>>
 }
 
 impl Conversation {
@@ -111,16 +111,13 @@ pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
             if let Ok(recv) = rx.try_recv() {
                 println!("get messages");
                 if let Ok(res) = recv {
-                    println!("{}", res.content);
-                    app_state.chat_storage.add_message(&uuid, &res).expect("Failed to add message");
-                    app_state.conversation.messages.push(res);
-                    app_state.conversation.messages.push(Message {
-                        uuid: Uuid::new_v4(),
-                        sender: Sender::System,
-                        content: "System Message".to_string(),
-                        is_sql: false,
-                        timestamp: Utc::now(),
-                    });
+                    let (user_message, system_message) = res;
+                    println!("User: {}", user_message.content, );
+                    println!("System: {}", system_message.content, );
+                    app_state.chat_storage.add_message(&uuid, &user_message).expect("Failed to add message");
+                    app_state.chat_storage.add_message(&uuid, &system_message).expect("Failed to add message");
+                    app_state.conversation.messages.push(user_message);
+                    app_state.conversation.messages.push(system_message);
                 } else {
                     println!("Error receiving message: {:?}", recv.err());
                 }
@@ -133,11 +130,12 @@ pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
 }
 
 
-pub async fn send_message(llm_client:  &LLMClient, db_manager: &DatabaseManager, element_uuid: &Uuid, msg: String) -> Result<Message, String> {
+pub async fn send_message(llm_client:  &LLMClient, db_manager: &DatabaseManager, element_uuid: &Uuid, msg: String) -> Result<(Message, Message), String> {
     let message = Message::new(Sender::User, msg, false);
     let schema = db_manager.get_schema_info(element_uuid).await?;
     let response = llm_client.generate_sql(&message.content, &schema).await.expect("Failed to communicate with LLM");
-    // println!("{}", response);
 
-    Ok(message)
+    let system_response = Message::new(Sender::System, response.message, response.r#type == ResponseType::Clarification);
+
+    Ok((message, system_response))
 }

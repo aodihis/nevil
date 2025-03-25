@@ -64,7 +64,7 @@ pub async fn llm_request(api_key: String, client: &Client, model: String, user_q
 
             {{
                 \"type\": \"query\",
-                \"sql\": \"SELECT * FROM users;\"
+                \"message\": \"SELECT * FROM users;\"
             }}
             OR
             {{
