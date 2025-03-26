@@ -38,9 +38,9 @@ pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
             .max_height(chat_height)
             .show(ui, |ui| {
                 for msg in &app_state.conversation.messages {
-                    let (align, bubble_color) = match msg.sender {
-                        Sender::User => (egui::Layout::right_to_left(Align::RIGHT), Color32::from_rgb(0, 150, 255)),
-                        Sender::System => (egui::Layout::left_to_right(Align::RIGHT), Color32::from_rgb(230, 230, 230)),
+                    let (align, bubble_color, valign) = match msg.sender {
+                        Sender::User => (egui::Layout::right_to_left(Align::RIGHT), Color32::from_rgb(0, 150, 255), Align::RIGHT),
+                        Sender::System => (egui::Layout::left_to_right(Align::RIGHT), Color32::from_rgb(230, 230, 230), Align::LEFT),
                     };
 
                     ui.with_layout(align, |ui| {
@@ -49,14 +49,30 @@ pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
                             .corner_radius(egui::CornerRadius::same(12))
                             .inner_margin(egui::Margin::symmetric(10, 8))
                             .show(ui, |ui| {
+
                                 let text_color = if let Sender::User = msg.sender {
                                     Color32::WHITE
                                 } else {
                                     Color32::BLACK
                                 };
-                                ui.horizontal_wrapped(|ui| {
-                                    ui.colored_label(text_color, &msg.content);
-                                });
+
+                                if msg.is_sql {
+                                    ui.with_layout(egui::Layout::top_down(valign), |ui| {
+                                        ui.horizontal_wrapped(|ui| {
+                                            ui.colored_label(text_color, &msg.content);
+                                        });
+                                        if ui.button("▶ Run Query").clicked() {
+                                            println!("Query is running...");
+                                        }
+                                    });
+                                } else {
+                                    ui.horizontal_wrapped(|ui| {
+                                        ui.colored_label(text_color, &msg.content);
+                                    });
+                                }
+
+
+
                             });
                     });
 
@@ -135,7 +151,7 @@ pub async fn send_message(llm_client:  &LLMClient, db_manager: &DatabaseManager,
         }
     };
 
-    let system_response = Message::new(Sender::System, response.message, response.r#type == ResponseType::Clarification);
+    let system_response = Message::new(Sender::System, response.message, response.r#type == ResponseType::Query);
 
     Ok((message, system_response))
 }
