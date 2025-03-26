@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use crate::db_element::chat::Message;
 use bincode::config;
+use log::debug;
 use sled::Db;
 use uuid::Uuid;
 
@@ -28,7 +29,7 @@ impl ChatStorage {
         Ok(())
     }
 
-    pub fn get_messages(&self, db_uuid: &Uuid) -> Result<Vec<Message>, String> {
+    pub fn get_conversation(&self, db_uuid: &Uuid) -> Result<Vec<Message>, String> {
         let tree = self.db.open_tree("messages").expect("Unable to open messages");
         let prefix = format!("{}:", db_uuid);
         let config = config::standard();
@@ -39,5 +40,23 @@ impl ChatStorage {
             messages.push(message);
         }
         Ok(messages)
+    }
+
+    pub fn remove_conversation(&self, conversation_id: &Uuid) -> Result<(), String> {
+        let messages_tree = self.db.open_tree("messages").expect("Unable to open messages");
+
+        let prefix = format!("{}:", conversation_id);
+        let message_prefix = prefix.as_bytes();
+        debug!("Removing conversation with prefix {}", prefix);
+        let keys_to_remove: Vec<_> = messages_tree
+            .scan_prefix(message_prefix)
+            .keys()
+            .collect::<Result<Vec<_>, sled::Error>>().expect("Unable to retrieve keys");
+
+        for key in keys_to_remove {
+            messages_tree.remove(&key).expect("Unable to remove message");
+        }
+
+        Ok(())
     }
 }

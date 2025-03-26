@@ -43,7 +43,7 @@ pub fn connection_list(ui: &mut egui::Ui, app_state: &mut AppState) {
                 app_state.conversation = Conversation::new(Some(con.uuid.clone()));
                 app_state.conversation.messages = app_state
                     .chat_storage
-                    .get_messages(&con.uuid)
+                    .get_conversation(&con.uuid)
                     .unwrap_or_else(|_| vec![]);
                 let db_config = con.clone();
                 let pass = if let Ok(pwd) = SecureStorage::get_db_password(&con.uuid.to_string()) {

@@ -173,7 +173,7 @@ pub fn connection_ui(ctx: &Context, app_state: &mut AppState) {
                     app_state.connection.error_message =
                         Some("Database name cannot be empty".to_string());
                 } else {
-                    if let Err(err) = app_state.save_connection() {
+                    if let Err(err) = app_state.save_db() {
                         app_state.connection.error_message =
                             Some(format!("Failed to store password: {}", err));
                     } else {
@@ -232,7 +232,7 @@ pub fn connection_ui(ctx: &Context, app_state: &mut AppState) {
                         if ui.button("Yes").clicked() {
                             app_state.connection.confirm_delete = false;
                             if let Err(err) =
-                                app_state.remove_connection(app_state.connection.uuid.clone())
+                                app_state.remove_db(app_state.connection.uuid.clone())
                             {
                                 app_state.connection.loading_message = None;
                                 app_state.connection.success_message = None;

@@ -97,7 +97,7 @@ impl DBQueryApp {
 }
 
 impl AppState {
-    pub fn save_connection(&mut self) -> Result<(), String> {
+    pub fn save_db(&mut self) -> Result<(), String> {
         let connection = self.connection.clone();
         let password = connection.password;
         if let Err(err) = SecureStorage::store_db_password(&connection.uuid.to_string(), &password) {
@@ -129,14 +129,15 @@ impl AppState {
         Ok(())
     }
 
-    pub fn remove_connection(&mut self, connection_uuid: Uuid) -> Result<(), String>{
-        let index = self.config.connections.iter().position(|c| c.uuid == connection_uuid);
+    pub fn remove_db(&mut self, uuid: Uuid) -> Result<(), String>{
+        let index = self.config.connections.iter().position(|c| c.uuid == uuid);
         let index = if let Some(index) = index {
             index
         } else {
-            return Err(format!("Connection '{}' not found", connection_uuid));
+            return Err(format!("Connection '{}' not found", uuid));
         };
-        let _ = SecureStorage::remove_db_password(&connection_uuid.to_string());
+        let _ = SecureStorage::remove_db_password(&uuid.to_string());
+        let _ = self.chat_storage.remove_conversation(&uuid);
         self.config.connections.remove(index);
         self.config.save();
         Ok(())
