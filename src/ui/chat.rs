@@ -54,7 +54,9 @@ pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
                                 } else {
                                     Color32::BLACK
                                 };
-                                ui.colored_label(text_color, &msg.content);
+                                ui.horizontal_wrapped(|ui| {
+                                    ui.colored_label(text_color, &msg.content);
+                                });
                             });
                     });
 
