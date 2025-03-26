@@ -4,3 +4,4 @@ pub mod connection;
 pub mod setting;
 pub mod home;
 pub mod chat;
+pub mod query_result;

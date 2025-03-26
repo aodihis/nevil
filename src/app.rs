@@ -1,10 +1,11 @@
 use crate::config::{get_chat_db_path, AppConfig, DbConnection};
 use crate::db_element::chat_storage::ChatStorage;
-use crate::db_element::db::{DatabaseManager, QueryResult};
+use crate::db_element::db::DatabaseManager;
 use crate::llm::llm::LLMClient;
 use crate::security::SecureStorage;
 use crate::ui::chat::Conversation;
 use crate::ui::connection::Connection;
+use crate::ui::query_result::ResultTable;
 use crate::ui::setting::Settings;
 use crate::ui::ui::render_ui;
 use eframe::egui;
@@ -26,16 +27,14 @@ pub struct AppState {
     pub db_manager: Arc<DatabaseManager>,
     pub chat_storage: Arc<ChatStorage>,
     pub llm_client: Option<LLMClient>,
-    pub active_connection: Option<String>,
-    pub current_message: String,
-    pub query_result: Option<QueryResult>,
 
     pub runtime: Runtime,
 
     // UI related struct
     pub settings: Settings,
     pub connection: Connection,
-    pub conversation: Conversation
+    pub conversation: Conversation,
+    pub query_result: Vec<ResultTable>,
 }
 
 pub struct DBQueryApp {
@@ -85,9 +84,7 @@ impl DBQueryApp {
                 db_manager,
                 chat_storage: Arc::new(ChatStorage::new(chat_path).unwrap()),
                 llm_client,
-                active_connection: None,
-                current_message: String::new(),
-                query_result: None,
+                query_result: Vec::new(),
                 connection: Connection::new(),
                 runtime,
                 conversation: Conversation::new(None),
