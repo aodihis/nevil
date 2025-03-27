@@ -55,7 +55,6 @@ impl SecureStorage {
 #[derive(Debug)]
 pub enum SecurityError {
     KeyringError(keyring::Error),
-    EncryptionError(String),
 }
 
 impl From<keyring::Error> for SecurityError {
@@ -68,7 +67,6 @@ impl fmt::Display for SecurityError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             SecurityError::KeyringError(e) => write!(f, "Keyring error: {}", e),
-            SecurityError::EncryptionError(e) => write!(f, "Encryption error: {}", e),
         }
     }
 }
