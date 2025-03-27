@@ -2398,6 +2398,7 @@ dependencies = [
  "serde_json",
  "sled",
  "sqlx",
+ "tempfile",
  "tokio",
  "toml",
  "uuid",

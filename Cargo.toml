@@ -2,9 +2,14 @@
 name = "neVil"
 version = "0.1.0"
 edition = "2021"
+description = "A desktop application as database query assistant."
+license = "MIT OR Apache-2.0"
+
+[[bin]]
+name = "nevil"
+path = "src/main.rs"
 
 [dependencies]
-
 egui = "0.31.0"
 eframe = { version = "0.31.0", features = ["wgpu"] }
 keyring = { version = "3.6.2", features = ["apple-native", "windows-native"] }
@@ -25,3 +30,7 @@ sled = "0.34.7"
 bincode = { version = "2.0.1", features = ["serde"] }
 log = "0.4.27"
 egui_extras = "0.31.1"
+
+
+[dev-dependencies]
+tempfile = "3.17.1"
