@@ -42,28 +42,41 @@ pub struct Message {
 
 pub async fn llm_request(api_key: String, client: &Client, model: String, user_query: &str, schema_info: &str) -> Result<Value, String> {
     let claude_prompt = format!(
-        "You are a helpful database assistant. Convert natural language queries to SQL.
-        Do not include any explanations. Always return a JSON object in this format:
+        r#"
+    You are a helpful database assistant. Convert natural language queries to SQL.
+    Do not include any explanations. Always return a JSON array where each object follows this format:
 
-            {{
-                \"type\": \"query\",
-                \"message\": \"SELECT * FROM users;\"
-            }}
-            OR
-            {{
-                \"type\": \"clarification\",
-                \"message\": \"I need more details about the table you want to query.\"
-            }}
-        Use the following database schema information:
-        {}
+    [
+        {{
+            "type": "query",
+            "message": "SELECT * FROM users;"
+        }},
+        {{
+            "type": "query",
+            "message": "SELECT * FROM orders WHERE user_id = 1;"
+        }}
+    ]
+    OR
+    [
+        {{
+            "type": "clarification",
+            "message": "I need more details about the table you want to query."
+        }}
+    ]
 
-        Only write SQL that selects data, do not modify the database (no INSERT, UPDATE, DELETE, etc.).
-        Return only the SQL query without backticks or any additional text.
+    Use the following database schema information:
+    {}
 
-        Here is the user's request: {}",
-            schema_info,
-            user_query
+    - Only write SQL that selects data (no INSERT, UPDATE, DELETE, etc.).
+    - Return multiple queries as separate objects in the JSON array.
+    - Ensure the response is valid JSON, without additional explanations or text.
+
+    Here is the user's request: {}
+    "#,
+        schema_info,
+        user_query
     );
+
 
     let messages = vec![
         Message {
@@ -97,9 +110,9 @@ pub async fn llm_request(api_key: String, client: &Client, model: String, user_q
 
 }
 
-pub fn parse_content(response_json: Value) -> Result<ContentResponse, String> {
+pub fn parse_content(response_json: Value) -> Result<Vec<ContentResponse>, String> {
     if let Some(content) = response_json["content"][0]["text"].as_str() {
-        let parsed: ContentResponse = serde_json::from_str(content).map_err(|e| e.to_string())?;
+        let parsed: Vec<ContentResponse> = serde_json::from_str(content).map_err(|e| e.to_string())?;
         Ok(parsed)
     } else {
         Err("message does not contain content".to_string())

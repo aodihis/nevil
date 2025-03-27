@@ -173,7 +173,6 @@ impl AppState {
                     res
                 },
                 Err(e) => {
-                    println!("error {}", e);
                     tx.send(Err(format!("Failed to execute query: {}", e))).await.ok();
                     return;
                 },

@@ -59,26 +59,40 @@ struct OpenaiRequest {
     pub temperature: f32,
 }
 pub async fn llm_request(api_key: String, client: &Client, model: String, user_query: &str, schema_info: &str) -> Result<Value, String> {
-    let openai_prompt = format!(
-        "You are a helpful database assistant. Convert natural language queries to SQL.
-            Do not include any explanations. Always return a JSON object in this format:
 
-            {{
-                \"type\": \"query\",
-                \"message\": \"SELECT * FROM users;\"
-            }}
+    let openai_prompt = format!(
+        r#"
+            You are a helpful database assistant. Convert natural language queries to SQL.
+            Do not include any explanations. If multiple database queries are required,
+            return them as an array of JSON objects, each formatted as follows:
+
+            [
+                {{
+                    "type": "query",
+                    "message": "SELECT * FROM users;"
+                }},
+                {{
+                    "type": "query",
+                    "message": "SELECT * FROM orders WHERE user_id = 1;"
+                }}
+            ]
             OR
-            {{
-                \"type\": \"clarification\",
-                \"message\": \"I need more details about the table you want to query.\"
-            }}
+            [
+                {{
+                    "type": "clarification",
+                    "message": "I need more details about the table you want to query."
+                }}
+            ]
+
             Use the following database schema information:
             {}
 
-            Only write SQL that selects data, do not modify the database (no INSERT, UPDATE, DELETE, etc.).
-            Return only the SQL query without backticks or any additional text.",
-        schema_info
-    );
+            - Only write SQL that selects data (no INSERT, UPDATE, DELETE, etc.).
+            - Return multiple queries as separate objects in the JSON array.
+            - Ensure the response is valid JSON, without additional explanations or text.
+            "#,
+                schema_info
+            );
 
     let messages = vec![
         Message {
@@ -118,13 +132,12 @@ pub async fn llm_request(api_key: String, client: &Client, model: String, user_q
 
 }
 
-pub fn parse_content(response_json: Value) -> Result<ContentResponse, String> {
+pub fn parse_content(response_json: Value) -> Result<Vec<ContentResponse>, String> {
     if let Some(content) = response_json["choices"]
         .get(0)
         .and_then(|choice| choice["message"]["content"].as_str())
     {
-        let parsed: ContentResponse = serde_json::from_str(content).map_err(|e| e.to_string())?;
-        println!("{:?}", parsed);
+        let parsed: Vec<ContentResponse> = serde_json::from_str(content).map_err(|e| e.to_string())?;
         Ok(parsed)
     } else {
         Err("message does not contain content".to_string())

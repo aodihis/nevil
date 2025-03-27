@@ -33,7 +33,7 @@ impl LLMClient {
         }
     }
 
-    pub async fn generate_sql(&self, user_query: &str, schema_info: &str) -> Result<ContentResponse, String> {
+    pub async fn generate_sql(&self, user_query: &str, schema_info: &str) -> Result<Vec<ContentResponse>, String> {
         // Retrieve the API key securely
         let api_key = match SecureStorage::get_api_key() {
             Ok(key) => key,

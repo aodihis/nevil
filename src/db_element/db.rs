@@ -237,7 +237,6 @@ impl DatabaseManager {
                 })
             },
             DbPool::PostgreSQL(pool) => {
-                println!("starting,   query: {}", query);
                 let rows = sqlx::query(query)
                     .fetch_all(pool)
                     .await

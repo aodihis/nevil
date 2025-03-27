@@ -12,7 +12,7 @@ pub struct Conversation {
     pub messages: Vec<Message>,
     pub loading_query: RefCell<Vec<Uuid>>,
     message_input: String,
-    rx: Option<tokio::sync::mpsc::Receiver<Result<(Message,Message), String>>>
+    rx: Option<tokio::sync::mpsc::Receiver<Result<(Message,Vec<Message>), String>>>
 }
 
 impl Conversation {
@@ -65,12 +65,11 @@ pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
                                         ui.horizontal_wrapped(|ui| {
                                             ui.colored_label(text_color, &msg.content);
                                         });
-                                        let uuid = uuid.clone();
-                                        if app_state.conversation.loading_query.borrow().contains(&uuid) {
+                                        if app_state.conversation.loading_query.borrow().contains(&msg.uuid) {
                                             ui.add_enabled(false, egui::Button::new("⏳ Running..."));
                                         } else {
                                             if ui.button("▶ Run Query").clicked() {
-                                                app_state.conversation.loading_query.borrow_mut().push(uuid);
+                                                app_state.conversation.loading_query.borrow_mut().push(msg.uuid);
                                                 app_state.run_query(&uuid, &msg.content, &msg.uuid);
                                             }
                                         }
@@ -129,11 +128,13 @@ pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
         if let Some(ref mut rx) = app_state.conversation.rx {
             if let Ok(recv) = rx.try_recv() {
                 if let Ok(res) = recv {
-                    let (user_message, system_message) = res;
+                    let (user_message, system_messages) = res;
                     app_state.chat_storage.add_message(&uuid, &user_message).expect("Failed to add message");
-                    app_state.chat_storage.add_message(&uuid, &system_message).expect("Failed to add message");
                     app_state.conversation.messages.push(user_message);
-                    app_state.conversation.messages.push(system_message);
+                    system_messages.into_iter().for_each(|system_message| {
+                        app_state.chat_storage.add_message(&uuid, &system_message).expect("Failed to add message");
+                        app_state.conversation.messages.push(system_message);
+                    });
                 }
             }
         }
@@ -144,7 +145,7 @@ pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
 }
 
 
-pub async fn send_message(llm_client:  &LLMClient, db_manager: &DatabaseManager, element_uuid: &Uuid, msg: String) -> Result<(Message, Message), String> {
+pub async fn send_message(llm_client:  &LLMClient, db_manager: &DatabaseManager, element_uuid: &Uuid, msg: String) -> Result<(Message, Vec<Message>), String> {
     let message = Message::new(Sender::User, msg, false);
     let schema = db_manager.get_schema_info(element_uuid).await?;
     let response = match llm_client.generate_sql(&message.content, &schema).await {
@@ -158,7 +159,9 @@ pub async fn send_message(llm_client:  &LLMClient, db_manager: &DatabaseManager,
         }
     };
 
-    let system_response = Message::new(Sender::System, response.message, response.r#type == ResponseType::Query);
-
-    Ok((message, system_response))
+    // let system_response = Message::new(Sender::System, response.message, response.r#type == ResponseType::Query);
+    let system_responses = response.iter().map(|res| {
+        Message::new(Sender::System, res.message.to_string(), res.r#type == ResponseType::Query)
+    }).collect();
+    Ok((message, system_responses))
 }
