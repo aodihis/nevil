@@ -1,4 +1,4 @@
-use log::debug;
+use log::{debug, error};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -108,7 +108,11 @@ pub async fn llm_request(api_key: String, client: &Client, model: String, user_q
         .await
         .map_err(|e| e.to_string())?;
 
-    let response_json: Value = response.json().await.map_err(|e| e.to_string())?;
+    debug!("Openai response: {:?}", response);
+    let response_json: Value = response.json().await.map_err(|e| {
+        error!("Failed to parse response {}", e);
+        e.to_string()
+    })?;
     debug!("OpenAI response data: {}", response_json);
     Ok(response_json)
 

@@ -29,6 +29,8 @@ pub struct AppState {
     pub llm_client: Option<LLMClient>,
 
     pub runtime: Runtime,
+    pub query_tx: tokio::sync::mpsc::Sender<Result<ResultTable, String>>,
+    pub query_rx: tokio::sync::mpsc::Receiver<Result<ResultTable, String>>,
 
     // UI related struct
     pub settings: Settings,
@@ -70,6 +72,7 @@ impl DBQueryApp {
             Err(_) => {"".to_string()}
         };
         let chat_path = get_chat_db_path();
+        let (tx, rx) = tokio::sync::mpsc::channel(1);
         Self {
             state: AppState {
                 config,
@@ -87,6 +90,8 @@ impl DBQueryApp {
                 query_result: Vec::new(),
                 connection: Connection::new(),
                 runtime,
+                query_tx: tx,
+                query_rx: rx,
                 conversation: Conversation::new(None),
             },
         }
@@ -154,6 +159,34 @@ impl AppState {
         Ok(())
     }
 
+    pub fn run_query(&self, connection_id: &Uuid, query: &str, message_uuid: &Uuid) {
+
+        let tx = self.query_tx.clone();
+        let message_uuid = message_uuid.clone();
+        let db_manager = self.db_manager.clone();
+        let connection_id = connection_id.clone();
+        let query = query.to_string();
+        self.runtime.spawn(async move {
+            let res = match db_manager.execute_query(&connection_id, &query).await {
+                Ok(res) => {
+                    println!("{}", format!("Success: {:?}", res));
+                    res
+                },
+                Err(e) => {
+                    println!("error {}", e);
+                    tx.send(Err(format!("Failed to execute query: {}", e))).await.ok();
+                    return;
+                },
+            };
+            let table = ResultTable {
+                id: message_uuid,
+                title: query,
+                data: res,
+            };
+            tx.send(Ok(table)).await.ok();
+        });
+
+    }
     // pub fn send_message(&mut self) {
     //     if self.current_message.trim().is_empty() {
     //         return;

@@ -6,6 +6,7 @@ use sqlx::ColumnIndex;
 use sqlx::{mysql::MySqlPoolOptions, postgres::PgPoolOptions, Decode, MySqlPool, PgPool, Row, Type};
 use std::sync::Arc;
 use std::time::Duration;
+use log::{debug};
 use tokio::sync::Mutex;
 use uuid::Uuid;
 
@@ -18,6 +19,7 @@ pub struct DatabaseManager {
     connections: Arc<Mutex<HashMap<Uuid, DbPool>>>,
 }
 
+#[derive(Debug)]
 pub struct QueryResult {
     pub columns: Vec<String>,
     pub rows: Vec<Vec<String>>,
@@ -197,6 +199,7 @@ impl DatabaseManager {
     }
 
     pub async fn execute_query(&self, connection_uuid: &Uuid, query: &str) -> Result<QueryResult, String> {
+        debug!("Start running query: {}", query);
         let connections = self.connections.lock().await;
         // Find the connection
         let connection = connections.get(connection_uuid).ok_or_else(|| "Connection not found".to_string())?;
@@ -227,13 +230,14 @@ impl DatabaseManager {
                     .iter()
                     .map(process_row)
                     .collect();
-
+                debug!("Finish running query: {}", query);
                 Ok(QueryResult {
                     columns,
                     rows: result_rows,
                 })
             },
             DbPool::PostgreSQL(pool) => {
+                println!("starting,   query: {}", query);
                 let rows = sqlx::query(query)
                     .fetch_all(pool)
                     .await
@@ -259,6 +263,7 @@ impl DatabaseManager {
                     .map(process_row)
                     .collect();
 
+                debug!("Finish running query: {}", query);
                 Ok(QueryResult {
                     columns,
                     rows: result_rows,

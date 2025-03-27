@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use crate::app::{AppMode, AppState};
 use crate::db_element::chat::{Message, Sender};
 use crate::db_element::db::DatabaseManager;
@@ -9,25 +10,26 @@ use uuid::Uuid;
 pub struct Conversation {
     pub id: Option<Uuid>,
     pub messages: Vec<Message>,
+    pub loading_query: RefCell<Vec<Uuid>>,
     message_input: String,
     rx: Option<tokio::sync::mpsc::Receiver<Result<(Message,Message), String>>>
 }
 
 impl Conversation {
     pub fn new(uuid: Option<Uuid>) -> Self {
-        Self { id: uuid, messages: Vec::new(), message_input: "".to_string(), rx: None }
+        Self { id: uuid, messages: Vec::new(), loading_query: RefCell::new(vec![]), message_input: "".to_string(), rx: None }
     }
 }
 pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
-    let uuid = app_state.conversation.id.unwrap();
-    let llm_client = match &app_state.llm_client {
-        Some(client) => client,
-        _ => {
-            app_state.mode = AppMode::Home;
-            return;
-        }
-    };
     egui::CentralPanel::default().show(ctx, |ui| {
+        let uuid = app_state.conversation.id.unwrap();
+        let llm_client = match &app_state.llm_client {
+            Some(client) => client.clone(),
+            _ => {
+                app_state.mode = AppMode::Home;
+                return;
+            }
+        };
         // Chat area
         let available_height = ui.available_height();
         let chat_height = available_height * 0.85;
@@ -38,12 +40,14 @@ pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
             .max_height(chat_height)
             .show(ui, |ui| {
                 for msg in &app_state.conversation.messages {
+
                     let (align, bubble_color, valign) = match msg.sender {
                         Sender::User => (egui::Layout::right_to_left(Align::RIGHT), Color32::from_rgb(0, 150, 255), Align::RIGHT),
                         Sender::System => (egui::Layout::left_to_right(Align::RIGHT), Color32::from_rgb(230, 230, 230), Align::LEFT),
                     };
 
                     ui.with_layout(align, |ui| {
+
                         Frame::NONE
                             .fill(bubble_color)
                             .corner_radius(egui::CornerRadius::same(12))
@@ -61,8 +65,14 @@ pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
                                         ui.horizontal_wrapped(|ui| {
                                             ui.colored_label(text_color, &msg.content);
                                         });
-                                        if ui.button("▶ Run Query").clicked() {
-                                            println!("Query is running...");
+                                        let uuid = uuid.clone();
+                                        if app_state.conversation.loading_query.borrow().contains(&uuid) {
+                                            ui.add_enabled(false, egui::Button::new("⏳ Running..."));
+                                        } else {
+                                            if ui.button("▶ Run Query").clicked() {
+                                                app_state.conversation.loading_query.borrow_mut().push(uuid);
+                                                app_state.run_query(&uuid, &msg.content, &msg.uuid);
+                                            }
                                         }
                                     });
                                 } else {
@@ -70,9 +80,6 @@ pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
                                         ui.colored_label(text_color, &msg.content);
                                     });
                                 }
-
-
-
                             });
                     });
 
