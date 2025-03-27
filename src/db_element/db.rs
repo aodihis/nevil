@@ -273,18 +273,44 @@ impl DatabaseManager {
     }
 }
 
-fn process_row<R: Row>(row: &R) -> Vec<String> where
-    R: Row,
-    for<'r> String: Decode<'r, R::Database> + Type<R::Database>,
-    for<'r> Option<String>: Decode<'r, R::Database> + Type<R::Database>, usize: ColumnIndex<R>{
+fn process_row<R: Row>(row: &R) -> Vec<String>
+    where
+        R: Row,
+        for<'r> String: Decode<'r, R::Database> + Type<R::Database>,
+        for<'r> Option<String>: Decode<'r, R::Database> + Type<R::Database>,
+        for<'r> i64: Decode<'r, R::Database> + Type<R::Database>,  // Handle integers
+        for<'r> i32: Decode<'r, R::Database> + Type<R::Database>,  // Handle integers
+        for<'r> f64: Decode<'r, R::Database> + Type<R::Database>,  // Handle floats
+        for<'r> Option<Vec<u8>>: Decode<'r, R::Database> + Type<R::Database>, usize: ColumnIndex<R> // Handle binary
+{
     (0..row.columns().len())
         .map(|i| {
-            row.try_get::<String, _>(i)
-                .unwrap_or_else(|_| {
-                    row.try_get::<Option<String>, _>(i)
-                        .map(|val| val.unwrap_or_else(|| "NULL".to_string()))
-                        .unwrap_or_else(|_| "<binary>".to_string())
-                })
+
+            if let Ok(value) = row.try_get::<String, _>(i) {
+                return value;
+            }
+
+            if let Ok(value) = row.try_get::<i32, _>(i) {
+                return value.to_string();
+            }
+
+            if let Ok(value) = row.try_get::<i64, _>(i) {
+                return value.to_string();
+            }
+
+            if let Ok(value) = row.try_get::<f64, _>(i) {
+                return value.to_string();
+            }
+
+            if let Ok(Some(value)) = row.try_get::<Option<String>, _>(i) {
+                return value;
+            }
+
+            if let Ok(Some(_bytes)) = row.try_get::<Option<Vec<u8>>, _>(i) {
+                return "<binary>".to_string();
+            }
+
+            "<unknown>".to_string()
         })
         .collect()
 }

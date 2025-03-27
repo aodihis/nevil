@@ -31,7 +31,7 @@ impl DbConnection {
     pub fn connection_string_template(&self) -> String {
         match self.db_type {
             DbType::MySQL => {"mysql://{username}:{password}@{host}:{port}/{database}".to_string()}
-            DbType::PostgreSQL => {"postgres://{username}:{password}@{host}:{port}/{database}".to_string()}
+            DbType::PostgreSQL => {"postgres://{username}:{password}@{host}:{port}/{database}?client_encoding=UTF8".to_string()}
         }
     }
 }

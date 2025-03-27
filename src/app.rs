@@ -169,7 +169,6 @@ impl AppState {
         self.runtime.spawn(async move {
             let res = match db_manager.execute_query(&connection_id, &query).await {
                 Ok(res) => {
-                    println!("{}", format!("Success: {:?}", res));
                     res
                 },
                 Err(e) => {
