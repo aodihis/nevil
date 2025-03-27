@@ -10,6 +10,7 @@ use uuid::Uuid;
 pub struct Conversation {
     pub id: Option<Uuid>,
     pub messages: Vec<Message>,
+    is_loading: bool,
     pub loading_query: RefCell<Vec<Uuid>>,
     message_input: String,
     rx: Option<tokio::sync::mpsc::Receiver<Result<(Message,Vec<Message>), String>>>
@@ -17,7 +18,7 @@ pub struct Conversation {
 
 impl Conversation {
     pub fn new(uuid: Option<Uuid>) -> Self {
-        Self { id: uuid, messages: Vec::new(), loading_query: RefCell::new(vec![]), message_input: "".to_string(), rx: None }
+        Self { id: uuid, messages: Vec::new(), is_loading: false, loading_query: RefCell::new(vec![]), message_input: "".to_string(), rx: None }
     }
 }
 pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
@@ -102,6 +103,10 @@ pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
                 });
             // ui.add_space(4.0);
 
+            if app_state.conversation.is_loading {
+                ui.add_enabled(false, egui::Button::new("⏳ Running..."));
+                return;
+            }
             let send_clicked = ui.button("Send").clicked();
             let enter_pressed = ui.input(|i| i.key_pressed(egui::Key::Enter) && !i.modifiers.shift);
 
@@ -110,7 +115,7 @@ pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
                 if !app_state.conversation.message_input.trim().is_empty() {
                     let uuid = uuid.clone();
                     let (tx, rx) = tokio::sync::mpsc::channel(1);
-
+                    app_state.conversation.is_loading = true;
                     app_state.conversation.rx = Some(rx);
                     let db_manager = app_state.db_manager.clone();
                     let message = app_state.conversation.message_input.clone();
@@ -135,6 +140,7 @@ pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
                         app_state.chat_storage.add_message(&uuid, &system_message).expect("Failed to add message");
                         app_state.conversation.messages.push(system_message);
                     });
+                    app_state.conversation.is_loading = false;
                 }
             }
         }
