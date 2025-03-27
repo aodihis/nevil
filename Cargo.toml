@@ -34,3 +34,9 @@ egui_extras = "0.31.1"
 
 [dev-dependencies]
 tempfile = "3.17.1"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true
+panic = "abort"
