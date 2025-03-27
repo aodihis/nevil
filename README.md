@@ -7,14 +7,6 @@ neVil is an experimental desktop application built with Rust, egui, and eframe t
 - 🤖 LLM-Powered Querying
 - 🔒 Support for Claude and OpenAI API
 - 📊 Database Data Retrieval
-- 🚀 User-Friendly Interface
-
-## Screenshots
-<div style="display: flex; overflow-x: auto; white-space: nowrap; gap: 10px; padding: 10px 0;">
-    <img src="https://github.com/aodihis/nevil/blob/main/resources/image/main.png?raw=true" alt="Main" style="flex: 0 0 auto; max-height: 300px;">
-    <img src="https://raw.githubusercontent.com/aodihis/nevil/refs/heads/main/resources/image/chat.png" alt="Conversation" style="flex: 0 0 auto; max-height: 300px;">
-    <img src="https://github.com/aodihis/nevil/blob/main/resources/image/result.png?raw=true" alt="Result" style="flex: 0 0 auto; max-height: 300px;">
-</div>
 
 ## Prerequisites
 - Rust (latest stable version)
