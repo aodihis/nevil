@@ -114,11 +114,7 @@ fn render_table(window: &ResultTable, ui: &mut Ui) {
     let mut table = TableBuilder::new(ui)
         .striped(true)
         .resizable(true)
-        .cell_layout(egui::Layout::left_to_right(Align::Center));
-
-    for _ in 0..window.data.columns.len() {
-        table = table.column(Column::auto());
-    }
+        .cell_layout(egui::Layout::left_to_right(Align::LEFT));
 
 
     let bg = Color32::LIGHT_GRAY;
@@ -128,6 +124,28 @@ fn render_table(window: &ResultTable, ui: &mut Ui) {
         ui.painter().rect_filled(gapless_rect, 0.0, bg);
     };
 
+    let mut sizes = vec![];
+
+    for col in &window.data.columns {
+        sizes.push(col.len());
+    }
+
+    for row in &window.data.rows {
+        let len = row.len();
+        for i in 0..len {
+            sizes[i] = row[i].len().max(sizes[i]);
+        }
+    }
+
+    for i in 0..window.data.columns.len() {
+        table = table.column(
+            if sizes[i] > 50 {
+                Column::initial(sizes[i].min(150) as f32).clip(true)
+            } else {
+                Column::auto()
+            }
+        );
+    }
     table
         .header(20.0, |mut header| {
             for col in &window.data.columns {
@@ -157,4 +175,5 @@ fn render_table(window: &ResultTable, ui: &mut Ui) {
 
             }
         });
+
 }

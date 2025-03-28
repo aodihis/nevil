@@ -4,11 +4,7 @@ use std::fs;
 use std::path::PathBuf;
 use uuid::Uuid;
 
-#[derive(Serialize, Deserialize)]
-pub struct AppConfig {
-    pub llm_api: LLMConfig,
-    pub connections: Vec<DbConnection>,
-}
+
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct LLMConfig {
@@ -39,6 +35,12 @@ impl DbConnection {
 pub enum DbType {
     MySQL,
     PostgreSQL,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct AppConfig {
+    pub llm_api: LLMConfig,
+    pub connections: Vec<DbConnection>,
 }
 
 impl AppConfig {
