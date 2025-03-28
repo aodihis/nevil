@@ -26,6 +26,7 @@ pub struct QueryResult {
     pub rows: Vec<Vec<String>>,
     pub current_page: usize,
     pub total_pages: usize,
+    #[allow(dead_code)]
     pub limit: usize,
 }
 

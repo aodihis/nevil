@@ -3,7 +3,6 @@ use crate::db_element::db::QueryResult;
 use eframe::emath::Align;
 use egui::{Color32, Context, Frame, RichText, TextEdit, Ui, Window};
 use egui_extras::{Column, Size, StripBuilder, TableBuilder};
-use sqlx::query;
 use uuid::Uuid;
 
 pub struct ResultTable {
@@ -123,7 +122,7 @@ fn render_table(window: &ResultTable, ui: &mut Ui) {
 
 
     let bg = Color32::LIGHT_GRAY;
-    let paint_bg = |ui: &mut egui::Ui| {
+    let paint_bg = |ui: &mut Ui| {
         let item_spacing = ui.spacing().item_spacing;
         let gapless_rect = ui.max_rect().expand2(0.5 * item_spacing);
         ui.painter().rect_filled(gapless_rect, 0.0, bg);
