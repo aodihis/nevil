@@ -71,7 +71,7 @@ pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
                                         } else {
                                             if ui.button("▶ Run Query").clicked() {
                                                 app_state.conversation.loading_query.borrow_mut().push(msg.uuid);
-                                                app_state.run_query(&uuid, &msg.content, &msg.uuid);
+                                                app_state.run_query(&uuid, &msg.content, &msg.uuid, 1);
                                             }
                                         }
                                     });

@@ -1,6 +1,6 @@
 use crate::config::{get_chat_db_path, AppConfig, DbConnection};
 use crate::db_element::chat_storage::ChatStorage;
-use crate::db_element::db::DatabaseManager;
+use crate::db_element::db::{DatabaseManager, PAGE_SIZE};
 use crate::llm::llm::LLMClient;
 use crate::security::SecureStorage;
 use crate::ui::chat::Conversation;
@@ -10,6 +10,7 @@ use crate::ui::setting::Settings;
 use crate::ui::ui::render_ui;
 use eframe::egui;
 use std::sync::Arc;
+use log::error;
 use tokio::runtime::Runtime;
 use uuid::Uuid;
 
@@ -159,29 +160,31 @@ impl AppState {
         Ok(())
     }
 
-    pub fn run_query(&self, connection_id: &Uuid, query: &str, message_uuid: &Uuid) {
+    pub fn run_query(&self, connection_id: &Uuid, query: &str, message_uuid: &Uuid, page: usize) {
 
         let tx = self.query_tx.clone();
         let message_uuid = message_uuid.clone();
         let db_manager = self.db_manager.clone();
         let connection_id = connection_id.clone();
         let query = query.to_string();
+        let offset = (page-1) * PAGE_SIZE;
         self.runtime.spawn(async move {
-            let res = match db_manager.execute_query(&connection_id, &query).await {
+            let res = match db_manager.execute_query(&connection_id, &query, offset, None).await {
                 Ok(res) => {
                     res
                 },
                 Err(e) => {
+                    error!("Failed to execute query with message id {} : {}", message_uuid, e);
                     tx.send(Err(format!("Failed to execute query: {}", e))).await.ok();
                     return;
                 },
             };
             let table = ResultTable {
                 id: message_uuid,
-                title: query,
+                connection_id: connection_id.clone(),
+                edited_page: res.current_page,
+                query,
                 data: res,
-                current_page: 0,
-                total_of_pages: 0,
                 is_open: true,
             };
             tx.send(Ok(table)).await.ok();
