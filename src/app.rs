@@ -180,6 +180,9 @@ impl AppState {
                 id: message_uuid,
                 title: query,
                 data: res,
+                current_page: 0,
+                total_of_pages: 0,
+                is_open: true,
             };
             tx.send(Ok(table)).await.ok();
         });
