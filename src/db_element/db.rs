@@ -1,15 +1,15 @@
 use std::collections::HashMap;
 use crate::config::{DbConnection, DbType};
 use crate::security::SecureStorage;
-use sqlx::Column;
-use sqlx::ColumnIndex;
-use sqlx::{mysql::MySqlPoolOptions, postgres::PgPoolOptions, Decode, MySqlPool, PgPool, Row, Type};
+use sqlx::{mysql::MySqlPoolOptions, postgres::PgPoolOptions, MySqlPool, PgPool, Row};
 use std::sync::Arc;
 use std::time::Duration;
 use log::{debug};
 use tokio::sync::Mutex;
 use uuid::Uuid;
+use crate::utils::db_utils::{mysql_query, postgres_query};
 
+pub const PAGE_SIZE: usize = 100;
 pub enum DbPool {
     MySQL(MySqlPool),
     PostgreSQL(PgPool),
@@ -23,6 +23,10 @@ pub struct DatabaseManager {
 pub struct QueryResult {
     pub columns: Vec<String>,
     pub rows: Vec<Vec<String>>,
+    pub current_page: usize,
+    pub total_pages: usize,
+    #[allow(dead_code)]
+    pub limit: usize,
 }
 
 impl DatabaseManager {
@@ -198,119 +202,29 @@ impl DatabaseManager {
         }
     }
 
-    pub async fn execute_query(&self, connection_uuid: &Uuid, query: &str) -> Result<QueryResult, String> {
+    pub async fn execute_query(&self, connection_uuid: &Uuid, query: &str, offset: usize, limit: Option<usize>) -> Result<QueryResult, String> {
         debug!("Start running query: {}", query);
         let connections = self.connections.lock().await;
         // Find the connection
         let connection = connections.get(connection_uuid).ok_or_else(|| "Connection not found".to_string())?;
+        let limit = limit.unwrap_or(PAGE_SIZE);
+
+        let query = query.trim_end_matches(';');
+        let count_query = format!("SELECT COUNT(*) FROM ({}) AS subquery", query);
+        let paginated_query = format!("SELECT * FROM ({}) AS subquery LIMIT {} OFFSET {}", query, limit, offset);
+
+        debug!("Count query: {}", count_query);
+        debug!("Paginated query: {}", count_query);
         // Execute query based on database type
         match connection {
             DbPool::MySQL(pool) => {
-                let rows = sqlx::query(query)
-                    .fetch_all(pool)
-                    .await
-                    .map_err(|e| e.to_string())?;
+                mysql_query(pool, count_query, paginated_query, offset, limit).await
 
-                if rows.is_empty() {
-                    return Ok(QueryResult {
-                        columns: Vec::new(),
-                        rows: Vec::new(),
-                    });
-                }
-
-                // Extract column names
-                let columns = rows[0]
-                    .columns()
-                    .iter()
-                    .map(|c| c.name().to_string())
-                    .collect();
-
-                // Extract row data
-                let result_rows = rows
-                    .iter()
-                    .map(process_row)
-                    .collect();
-                debug!("Finish running query: {}", query);
-                Ok(QueryResult {
-                    columns,
-                    rows: result_rows,
-                })
             },
             DbPool::PostgreSQL(pool) => {
-                let rows = sqlx::query(query)
-                    .fetch_all(pool)
-                    .await
-                    .map_err(|e| e.to_string())?;
-
-                if rows.is_empty() {
-                    return Ok(QueryResult {
-                        columns: Vec::new(),
-                        rows: Vec::new(),
-                    });
-                }
-
-                // Extract column names
-                let columns = rows[0]
-                    .columns()
-                    .iter()
-                    .map(|c| c.name().to_string())
-                    .collect();
-
-                // Extract row data
-                let result_rows = rows
-                    .iter()
-                    .map(process_row)
-                    .collect();
-
-                debug!("Finish running query: {}", query);
-                Ok(QueryResult {
-                    columns,
-                    rows: result_rows,
-                })
+                postgres_query(pool, count_query, paginated_query, offset, limit).await
             }
         }
-
     }
 }
 
-fn process_row<R: Row>(row: &R) -> Vec<String>
-    where
-        R: Row,
-        for<'r> String: Decode<'r, R::Database> + Type<R::Database>,
-        for<'r> Option<String>: Decode<'r, R::Database> + Type<R::Database>,
-        for<'r> i64: Decode<'r, R::Database> + Type<R::Database>,  // Handle integers
-        for<'r> i32: Decode<'r, R::Database> + Type<R::Database>,  // Handle integers
-        for<'r> f64: Decode<'r, R::Database> + Type<R::Database>,  // Handle floats
-        for<'r> Option<Vec<u8>>: Decode<'r, R::Database> + Type<R::Database>, usize: ColumnIndex<R> // Handle binary
-{
-    (0..row.columns().len())
-        .map(|i| {
-
-            if let Ok(value) = row.try_get::<String, _>(i) {
-                return value;
-            }
-
-            if let Ok(value) = row.try_get::<i32, _>(i) {
-                return value.to_string();
-            }
-
-            if let Ok(value) = row.try_get::<i64, _>(i) {
-                return value.to_string();
-            }
-
-            if let Ok(value) = row.try_get::<f64, _>(i) {
-                return value.to_string();
-            }
-
-            if let Ok(Some(value)) = row.try_get::<Option<String>, _>(i) {
-                return value;
-            }
-
-            if let Ok(Some(_bytes)) = row.try_get::<Option<Vec<u8>>, _>(i) {
-                return "<binary>".to_string();
-            }
-
-            "<unknown>".to_string()
-        })
-        .collect()
-}

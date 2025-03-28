@@ -71,7 +71,7 @@ pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
                                         } else {
                                             if ui.button("▶ Run Query").clicked() {
                                                 app_state.conversation.loading_query.borrow_mut().push(msg.uuid);
-                                                app_state.run_query(&uuid, &msg.content, &msg.uuid);
+                                                app_state.run_query(&uuid, &msg.content, &msg.uuid, 1);
                                             }
                                         }
                                     });
@@ -91,7 +91,8 @@ pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
         ui.separator();
         ui.add_space(4.0);
         ui.horizontal(|ui| {
-            ScrollArea::vertical()
+            let mut response = None;
+                ScrollArea::vertical()
                 .max_height(ui.available_height())
                 .show(ui, |ui| {
                     let input = TextEdit::multiline(&mut app_state.conversation.message_input)
@@ -99,16 +100,19 @@ pub fn render_chat(ctx: &Context, app_state: &mut AppState) {
                         .desired_width(ui.available_width() - 100.0)
                         .desired_rows(4)
                         .hint_text("Ask a question about your data...");
-                    let _ = ui.add(input);
+                    response = Some(ui.add(input));
                 });
             // ui.add_space(4.0);
-
             if app_state.conversation.is_loading {
                 ui.add_enabled(false, egui::Button::new("⏳ Running..."));
                 return;
             }
             let send_clicked = ui.button("Send").clicked();
-            let enter_pressed = ui.input(|i| i.key_pressed(egui::Key::Enter) && !i.modifiers.shift);
+            let enter_pressed =  if let Some(response) = response {
+                response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter) && !i.modifiers.shift)
+            } else {
+                false
+            };
 
             // Send button
             if send_clicked || enter_pressed {
